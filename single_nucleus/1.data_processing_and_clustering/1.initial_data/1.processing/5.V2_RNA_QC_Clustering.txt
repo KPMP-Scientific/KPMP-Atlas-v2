@@ -1,0 +1,353 @@
+library(Seurat)
+library(SeuratDisk)
+library(patchwork)
+library(dplyr)
+library(Matrix)
+library(ggplot2)
+library(pagoda2)
+library(igraph)
+library(BPCells)
+options(future.globals.maxSize = 1e9)
+
+setwd("~/data/net/home/Human_Kidney/Atlas_V2")
+options(Seurat.object.assay.version = "v5")
+
+KB <- readRDS("~/tmp_scratch/kidney_object/Kidney_Atlas_V2_04-2023_Object.Rds")
+load("color_factors.robj")
+
+KB.sub <- subset(KB, idents = c(1:100))
+KB.sub <- subset(KB.sub, library %in% c("KM150", "KB54"), invert = TRUE)
+KB.sub
+#36588 features across 1322031 samples within 1 assay
+
+##Create a sketch data set
+KB.sub <- FindVariableFeatures(KB.sub)
+KB.sub <- SketchData(
+  object = KB.sub,
+  ncells = 200000,
+  method = "LeverageScore",
+  sketched.assay = "sketch"
+)
+KB.sub
+
+DefaultAssay(KB.sub) <- "sketch"
+
+
+###Pagoda2 Clustering
+#Filtered Count Matrix from Seurat
+countMatrix <- KB.sub[["sketch"]]$counts
+countMatrix <- as(object = countMatrix, Class = "dgCMatrix")
+dim(countMatrix)
+
+## Batch annotations
+countMatrix.batch <- as.factor(unlist(lapply(colnames(countMatrix),function(x) unlist(strsplit(x,"_"))[1])))
+names(countMatrix.batch) <- colnames(countMatrix)
+
+# Generate a new pagoda2 object
+p2 <- Pagoda2$new(x = countMatrix, n.cores = 6, trim=10, batch=countMatrix.batch)
+
+# Adjust the variance
+p2$adjustVariance(plot = T, gam.k = 10)
+#5041 overdispersed genes
+
+# Calculate a PCA reduction with the number of PCs specified by nPCs
+# and using only the n.odgenes overdispersed genes 
+p2$calculatePcaReduction(nPcs = 50, n.odgenes = 5041, maxit=1000)
+
+# Generate K-nearest neighbour graph
+p2$makeKnnGraph(k = 100, type = 'PCA', center = T, weight.type = 'none', n.cores = 6, distance = 'cosine')
+p2$makeKnnGraph(k = 500, type = 'PCA', center = T, weight.type = 'none', n.cores = 6, distance = 'cosine')
+
+# Identify clusters using the infomap.community method
+# on the basis of the reduction called 'PCA' (generated above)
+# Save the resulting clustering as 'infomap'
+p2$getKnnClusters(method = igraph::infomap.community, type = 'PCA', name = 'infomap')
+
+k100infomap <- p2$clusters$PCA$infomap
+k500infomap <- p2$clusters$PCA$infomap
+
+#pagoda2 clusters and PCA values for umap
+var.info <- p2$misc$varinfo; var.info <- var.info[order(var.info$lp, decreasing = F),];
+sn.od.genes <- rownames(var.info)[1:5041]
+VariableFeatures(KB.sub) <- sn.od.genes
+
+cell.embeddings <- p2$reductions$PCA
+KB.sub[["pca"]] <- CreateDimReducObject(embeddings = cell.embeddings, key = "pca_", assay = DefaultAssay(KB.sub))
+
+KB.sub <- RunUMAP(object = KB.sub, reduction = "pca", dims = 1:50, n.neighbors = 20L,
+                  min.dist = 0.2, return.model = T)
+KB.sub@meta.data$pagoda_k100_infomap_sketch <- k100infomap[rownames(KB.sub@meta.data)]
+KB.sub@meta.data$pagoda_k500_infomap_sketch <- k500infomap[rownames(KB.sub@meta.data)]
+
+DimPlot(KB.sub, reduction = "umap", pt.size = 0.5) 
+DimPlot(KB.sub, reduction = "umap", pt.size = 0.5, label = TRUE, 
+        group.by = "pagoda_k100_infomap_sketch", repel = TRUE) + NoLegend()
+DimPlot(KB.sub, reduction = "umap", pt.size = 0.5, label = TRUE, 
+        group.by = "v1.subclass.l3", repel = TRUE) + NoLegend()
+
+
+save(p2, sn.od.genes, file = "Intermediate_Objects/Kidney_AtlasV2_Pagoda2_Sketch_k100.rda")
+
+saveRDS(
+  object = KB.sub,
+  file = "Kidney_Atlas_V2_04-2023_Object_0425subset.Rds",
+  destdir = "~/tmp_scratch/kidney_object"
+)
+
+
+#Add pc loadings
+pca.loadings <- p2$misc$PCA$v[sn.od.genes,]
+colnames(pca.loadings) <- paste("PC_", 1:50, sep = "")
+KB.sub@reductions$pca@feature.loadings <- pca.loadings
+Embeddings(KB.sub, reduction = "pca")
+
+
+#Extend results to the full datasets
+KB.sub <- ProjectData(
+  object = KB.sub,
+  assay = "RNA",
+  full.reduction = "pca.full",
+  sketched.assay = "sketch",
+  sketched.reduction = "pca",
+  umap.model = "umap",
+  dims = 1:50,
+  refdata = list(pagoda_k100_infomap_full = "pagoda_k100_infomap_sketch")
+)
+
+DefaultAssay(KB.sub) <- "RNA"
+DimPlot(KB.sub, label = T, label.size = 3, reduction = "umap", 
+        group.by = "pagoda_k100_infomap_full", alpha = 0.1) + NoLegend()
+
+saveRDS(
+  object = KB.sub,
+  file = "Kidney_Atlas_V2_04-2023_Object_0425subset.Rds",
+  destdir = "~/tmp_scratch/kidney_object"
+)
+
+
+
+##Generate table of cluster cell types
+KB.sub <- readRDS("~/tmp_scratch/kidney_object/Kidney_Atlas_V2_04-2023_Object_0425subset.Rds")
+Idents(KB.sub) <- "pagoda_k100_infomap_full"
+Idents(KB.sub) <- factor(Idents(KB.sub), levels = 1:length(levels(Idents(KB.sub))))
+levels(Idents(KB.sub)) <- paste("CL", levels(Idents(KB.sub)), sep = "")
+celltype <- Idents(KB.sub)
+
+getMaxIdents <- function(seurat.obj, celltype) {
+  max.idents <- do.call(rbind, lapply(levels(celltype), function(ct) {
+    print(paste("Running for cell type:", ct))
+    
+    cells <- WhichCells(seurat.obj, idents = ct)
+    seurat.obj.sub <- seurat.obj@meta.data[cells,]
+    ref.top2 <- tail(names(sort(table(seurat.obj.sub$v1clusters))), 2)
+    query.top2 <- tail(names(sort(table(seurat.obj.sub$v1.subclass.l3))), 2)
+    max.len = 2
+    ref.top2  = c(ref.top2 , rep(NA, max.len - length(ref.top2 )))
+    query.top2 = c(query.top2 , rep(NA, max.len - length(query.top2 )))
+    Idents.called <- data.frame(ref = prop.table(table(seurat.obj.sub$v1clusters))[ref.top2],
+                                ref.Total = sum(table(seurat.obj.sub$v1clusters)),
+                                query = prop.table(table(seurat.obj.sub$v1.subclass.l3))[query.top2],
+                                query.Total = sum(table(seurat.obj.sub$v1.subclass.l3)))
+    if (is.null(Idents.called$ref.Var1) == TRUE) {
+      Idents.called$ref.Var1 <- rep(NA, 2)
+      Idents.called$ref.Freq <- rep(NA, 2)
+      Idents.called$ref.Total <- rep(NA, 2)
+      Idents.called$query.Var1 <- Idents.called$query.Var1
+      Idents.called$query.Freq <- Idents.called$query.Freq
+      Idents.called$query.Total <- Idents.called$query.Total
+      Idents.called <- Idents.called[,c("ref.Var1","ref.Freq","ref.Total","query.Var1",
+                                        "query.Freq","query.Total")]
+    } else {
+      print(paste("ref cell types called for:", ct))
+    }
+    if (is.null(Idents.called$query.Var1) == TRUE) {
+      Idents.called$ref.Var1 <- Idents.called$ref.Var1
+      Idents.called$ref.Freq <- Idents.called$ref.Freq
+      Idents.called$ref.Total <- Idents.called$ref.Total
+      Idents.called$query.Var1 <- rep(NA, 2)
+      Idents.called$query.Freq <- rep(NA, 2)
+      Idents.called$query.Total <- rep(NA, 2)
+      Idents.called <- Idents.called[,c("ref.Var1","ref.Freq","ref.Total","query.Var1",
+                                        "query.Freq","query.Total")]
+    } else {
+      print(paste("query cell types called for:", ct))
+    }
+    
+    Idents.called$cluster <- rep(ct, length(rownames(Idents.called)))
+    colnames(Idents.called) <- c("ref.cluster", "ref.Freq","ref.Total", "query.subclass",
+                                 "query.Freq","query.Total","int.cluster")
+    rownames(Idents.called) <- paste(Idents.called$int.cluster, rownames(Idents.called), sep = ".")
+    Idents.called
+  }))
+  return(max.idents)
+}
+
+max.idents <- getMaxIdents(KB.sub, celltype)
+max.idents
+
+#Write out table
+write.table(max.idents, file="Intermediate_Objects/Kidney_atlasV2_sketch_cluster_v1_overlaps.txt", sep = "\t", row.names=TRUE, col.names=TRUE)
+
+
+#Check for clusters for overlapping marker signatures
+imm.markers <- c(
+  "PTPRC",                                              #Immune
+  "BANK1","MS4A1",                                      #B
+  "IGKC", "JCHAIN",                                     #PL
+  "CD96","CD247","IL7R",                                #T
+  "NKG7","GZMA",                                        #NKT
+  "MS4A2","CPA3","KIT",                                 #MAST
+  "MRC1","CD163","MSR1",                                #MAC
+  "ITGAX",                                              #cDC
+  "CUX2",                                               #pDC
+  "CTSS","FCGR3A",                                      #ncMON
+  "S100A9", "FCGR3B",                                   #N
+  
+  "PODXL","CLDN1", "CFH",                          #POD/PEC
+  "SLC5A12","SLC22A6",                                  #PT
+  "PRODH2","SLC34A1","SLC7A13",
+  "CRYAB","TACSTD2","SLC44A5",                          #TL
+  "AKR1B1","SH3GL3",
+  "CASR","SLC12A1","UMOD",                         #TAL
+  
+  "SLC12A3","TRPM6",                                   #DCT
+  "SLC8A1","SCN2A","HSD11B2","CALB1",                  #DCT2 / CNT
+  "PCDH7",                                             #CNT
+  "GATA3","AQP2","AQP3",                               #PC
+  "SLC26A7","SLC26A4",                                 #IC
+  "SLC14A2","FXYD4",                                   #IMCD
+  "TP63",                                              #PapE
+  
+  "ITGB6","CDH6","HAVCR1","VCAM1","PROM1",             #aEpi
+  
+  "PECAM1","EMCN","PLVAP","NR2F2","MMRN1",             #EC
+  "PDGFRB", "MYH11","POSTN",                           #VSMC/P
+  "COL1A1","C7","DCN",                                 #FIB 
+  "ACTA2","FAP",                                        #MYOF
+  "CDH19",                                             #SC/NEU
+  "APOE","DEFB1","CST3","WFDC2",                #Injury
+  
+  "MKI67","TOP2A"
+)
+
+Idents(KB.sub) <- "pagoda_k100_infomap_full"
+Idents(KB.sub) <- factor(Idents(KB.sub), levels = 1:length(levels(Idents(KB.sub))))
+DefaultAssay(KB.sub) <- "RNA"
+KB.sub <- ScaleData(KB.sub, features = imm.markers)
+DotPlot(KB.sub, idents = 51:100, features = imm.markers, dot.scale = 8) + RotatedAxis()
+
+
+
+#Check PT clusters
+pt.markers <- c("SLC5A12","SLC22A6",                                  #S1/S2
+                "PRODH2","SLC5A2","SLC22A8","SLC7A8",                 #S1
+                "SLC34A1","SLC5A10",                                  #S2                                  
+                "SLC5A11","SLC7A13",                                  #S3
+                
+                "ITGB8","CDH6","HAVCR1","VCAM1",                      #AS
+                
+                "PODXL","CLDN1", "CFH", 
+                "CRYAB","TACSTD2","SLC44A5", "SH3GL3",                #TL
+                "EMCN","PECAM1","PDGFRB","ACTA2","C7","DCN","COL1A1", #EC/stromal
+                "PTPRC","MRC1","CD163","MS4A1","JCHAIN","IL7R",       #Immune
+                "CD96","NKG7",       
+                "MS4A2","CPA3", "KIT","S100A9",
+                "APOE","DEFB1","CST3","GATM","ALDOB",                 #Injury
+                "UMOD","SLC12A1","SLC12A3","SLC8A1","AQP2",            #Distal tubules
+                "HSD11B2","SLC26A7",
+                "MKI67","TOP2A")
+
+DotPlot(KB.sub, idents = c(5,66,31,2,21,30,23,99,97,61,98,11,28,32,22,9,16,57,42,47),
+        features = pt.markers, dot.scale = 8) + RotatedAxis()
+
+
+##Find markers for ambiguous clusters
+DefaultAssay(KB.sub) <- "sketch"
+CL28_markers <- FindMarkers(object = KB.sub, ident.1 = 28, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#CL28 - mix of cell type markers, low number of significant markers, ambiguous degenerative state
+
+CL32_markers <- FindMarkers(object = KB.sub, ident.1 = 32, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl32 - large number of significant markers, top markers are PT, will keep as dPT
+
+CL42_markers <- FindMarkers(object = KB.sub, ident.1 = 42, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl42 - top markers are all ribosomal, ambiguous degenerative state
+
+CL47_markers <- FindMarkers(object = KB.sub, ident.1 = 47, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl47 - top markers are all ribosomal and stress response, ambiguous degenerative state
+
+CL57_markers <- FindMarkers(object = KB.sub, ident.1 = 57, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl57 - top markers are aPT and stress markers, will keep as aPT
+
+
+CL61_markers <- FindMarkers(object = KB.sub, ident.1 = 61, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl61 - only 10 significant markers, top are PT, significantly degenerative PT
+
+CL79_markers <- FindMarkers(object = KB.sub, ident.1 = 79, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl79 - many significant markers, top are FIB, dFIB
+
+CL86_markers <- FindMarkers(object = KB.sub, ident.1 = 86, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl86 - many significant markers, dEC, not clear if also multiplet (some POD markers)
+
+CL97_markers <- FindMarkers(object = KB.sub, ident.1 = 97, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl97 - neuronal
+
+CL98_markers <- FindMarkers(object = KB.sub, ident.1 = 98, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl98 - low number of significant markers, mix or PT/CNT/TAL - ambiguous low quality
+
+CL99_markers <- FindMarkers(object = KB.sub, ident.1 = 99, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+#Cl99 - adaptive and CNT markers - aCNT? add to v1cluster 44 (CNT) and separate out later
+
+
+table(KB.sub$pagoda_k100_infomap_full,KB.sub$pagoda_k100_infomap)["97",]
+
+##
+
+CL84_markers <- FindMarkers(object = KB.sub, ident.1 = 84, 
+                            max.cells.per.ident = 500, only.pos = TRUE)
+
+###Update v1 annotations
+DefaultAssay(KB.sub) <- "RNA"
+amb.cls <- WhichCells(KB.sub, idents = c(28,42,47,98))
+cl44 <- WhichCells(KB.sub, idents = 99)
+neu <- WhichCells(KB.sub, idents = 97)
+
+KB <- readRDS("~/tmp_scratch/kidney_object/Kidney_Atlas_V2_04-2023_Object.Rds")
+Idents(KB)
+KB <- SetIdent(KB, cells = amb.cls, value = 101)
+KB <- SetIdent(KB, cells = cl44, value = 44)
+KB <- SetIdent(KB, cells = neu, value = 100)
+
+KB$v1clusters <- Idents(object = KB)
+
+Idents(KB) <- factor(Idents(KB), levels = c(1:101))
+table(Idents(KB))
+
+#Update meta tables
+metav1 <- readRDS("Atlas_V1_Metadata_Tables.RDS")
+KB@meta.data$v1.subclass.l3 <- metav1$subclass.l3[match(KB@meta.data$v1clusters, metav1$clusters)]
+KB@meta.data$v1.subclass.l2 <- metav1$subclass.l2[match(KB@meta.data$v1clusters, metav1$clusters)]
+KB@meta.data$v1.subclass.l1 <- metav1$subclass.l1[match(KB@meta.data$v1clusters, metav1$clusters)]
+KB@meta.data$v1.state.l1 <- metav1$state.l1[match(KB@meta.data$v1clusters, metav1$clusters)]
+KB@meta.data$v1.state.l2 <- metav1$state.l2[match(KB@meta.data$v1clusters, metav1$clusters)]
+KB@meta.data$v1.class <- metav1$class[match(KB@meta.data$v1clusters, metav1$clusters)]
+KB@meta.data$v1.structure <- metav1$structure[match(KB@meta.data$v1clusters, metav1$clusters)]
+
+saveRDS(
+  object = KB,
+  file = "Kidney_Atlas_V2_04-2023_Object.Rds",
+  destdir = "~/tmp_scratch/kidney_object"
+)
+
+
+###
