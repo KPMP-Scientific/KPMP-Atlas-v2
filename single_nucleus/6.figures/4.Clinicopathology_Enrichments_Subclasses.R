@@ -39,28 +39,25 @@ order <- c("POD","dPOD","PEC","PT-S1","dPT-S1","PT-S2","dPT-S2","PT-S3","dPT-S3"
            "cDC2","ncMON","mDC","cDC1","pDC","N","cycT","cycMAC","SC/NEU")
 
 ###Read in sample and pvalue tables
-cond.ref.aki.pVal <- readRDS("Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.ref.ckd.pVal <- readRDS("Condition_Ref-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.aki.ckd.pVal <- readRDS("Condition_AKI-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.ref.ati.pVal <- readRDS("Condition_Ref-AKI-ATI_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.ref.ain.pVal <- readRDS("Condition_Ref-AKI-AIN_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.ati.ain.pVal <- readRDS("Condition_Ref-ATI-AIN_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.ref.ckd.hi.pVal <- readRDS("Condition_Ref-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values.RDS")
-cond.ckd.lo.ckd.hi.pVal <- readRDS("Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values.RDS")
+cond.ref.aki.pVal <- readRDS("Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.ref.ckd.pVal <- readRDS("Condition_Ref-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.aki.ckd.pVal <- readRDS("Condition_AKI-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.ref.ati.pVal <- readRDS("Condition_Ref-AKI-ATI_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.ref.ain.pVal <- readRDS("Condition_Ref-AKI-AIN_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.ati.ain.pVal <- readRDS("Condition_Ref-ATI-AIN_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.ref.ckd.hi.pVal <- readRDS("Condition_Ref-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+cond.ckd.lo.ckd.hi.pVal <- readRDS("Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
-adj.cond.ref.aki.pVal <- readRDS("Adj-Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values.RDS")
-adj.cond.ref.DKD.pVal <- readRDS("Adj-Condition_Ref-DKD_Group_composition_V2_Subclassl3_P-Values.RDS")
-adj.cond.ref.HCKD.pVal <- readRDS("Adj-Condition_Ref-H-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
-adj.cond.HCKD.DKD.pVal <- readRDS("Adj-Condition_H-CKD-DKD_Group_composition_V2_Subclassl3_P-Values.RDS")
-adj.cond.AKI.DKD.pVal <- readRDS("Adj-Condition_AKI-DKD_Group_composition_V2_Subclassl3_P-Values.RDS")
-adj.cond.AKI.HCKD.pVal <- readRDS("Adj-Condition_AKI-H-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+adj.cond.ref.aki.pVal <- readRDS("Adj-Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+adj.cond.ref.DKD.pVal <- readRDS("Adj-Condition_Ref-DKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+adj.cond.ref.HCKD.pVal <- readRDS("Adj-Condition_Ref-H-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+adj.cond.HCKD.DKD.pVal <- readRDS("Adj-Condition_H-CKD-DKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+adj.cond.AKI.DKD.pVal <- readRDS("Adj-Condition_AKI-DKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+adj.cond.AKI.HCKD.pVal <- readRDS("Adj-Condition_AKI-H-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
-eGFR.pVal <- readRDS("eGFR_Group_composition_V2_Subclassl3_P-Values.RDS")
-age.pVal <- readRDS("HRT_Age_Group_composition_V2_Subclassl3_P-Values.RDS")
-A1C.pVal <- readRDS("A1C_Group_composition_V2_Subclassl3_P-Values.RDS")
-Ptn.pVal <- readRDS("Proteinuria_Group_composition_V2_Subclassl3_P-Values.RDS")
-Alb.pVal <- readRDS("Albuminuria_Group_composition_V2_Subclassl3_P-Values.RDS")
+eGFR.pVal <- readRDS("eGFR_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+age.pVal <- readRDS("HRT_Age_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 IF.pVal <- readRDS("Interstitial-Fibrosis_Group_composition_V2_Subclassl3_P-Values.RDS")
 TA.pVal <- readRDS("Tubular-Atrophy_Group_composition_V2_Subclassl3_P-Values.RDS")
 TI.pVal <- readRDS("Tubular-Injury_Group_composition_V2_Subclassl3_P-Values.RDS")
@@ -78,7 +75,7 @@ row.order <- gsub(" ","",row.order)
 
 p.table <- do.call(cbind, mget(ls(pattern = "\\.pVal")))
 t.stats <- p.table[row.order,grep(".t", colnames(p.table))]
-write.table(p.table[row.order,], file = "QC_Plots/Composition_Analysis_p-Values_addit_Adj_Groups.txt", sep = "\t", quote = FALSE)
+write.table(p.table[row.order,], file = "QC_Plots/Composition_Analysis_p-Values_addit_Adj_Groups_biopsy.txt", sep = "\t", quote = FALSE)
 
 ###Clinical Phenotype Plots
 col.order <- c("cond.ref.aki.pVal",
@@ -91,7 +88,7 @@ states <- setNames(KB$v2.state.l2,KB$v2.subclass.l3)[order]
 ColSideColors <- as.character(state.l2.cols[as.character(states)])
 p.stats <- p.table[row.order,paste0(col.order,".p")]
 
-pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3.pdf',width=30,height=5)
+pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_biopsy.pdf',width=30,height=5)
 heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal(11,"RdBu"),scale="none", trace="none", 
           density.info= "none", cexRow = 1, margins = c(8, 8), Rowv = NA, Colv = NA,
           ColSideColors = ColSideColors,
@@ -99,7 +96,7 @@ heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal
           notecol = 'black', notecex = 2)
 dev.off() 
 
-pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_B.pdf',width=30,height=4)
+pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_biopsy_B.pdf',width=30,height=4)
 heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal(11,"RdBu"),scale="none", trace="none", 
           density.info= "none", cexRow = 1, margins = c(8, 8), Rowv = NA, Colv = NA,
           ColSideColors = ColSideColors,
@@ -118,14 +115,14 @@ states <- setNames(KB$v2.state.l2,KB$v2.subclass.l3)[order]
 ColSideColors <- as.character(state.l2.cols[as.character(states)])
 p.stats <- p.table[row.order,paste0(col.order,".p")]
 
-pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_Adju_Cat.pdf',width=30,height=6)
+pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_Adju_Cat_biopsy.pdf',width=30,height=6)
 heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal(11,"RdBu"),scale="none", trace="none", 
           density.info= "none", cexRow = 1, margins = c(8, 8), Rowv = NA, Colv = NA,
           ColSideColors = ColSideColors,
           cellnote = ifelse(as.matrix(t(p.stats)) < 0.05, "*", ""),
           notecol = 'black', notecex = 2)
 dev.off() 
-pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_Adju_Cat_B.pdf',width=30,height=5)
+pdf(file='QC_Plots/Composition_Analysis_t-statistic_Heatmap_Clinical_ordered_subclass_level3_Adju_Cat_biopsy_B.pdf',width=30,height=5)
 heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal(11,"RdBu"),scale="none", trace="none", 
           density.info= "none", cexRow = 1, margins = c(8, 8), Rowv = NA, Colv = NA,
           ColSideColors = ColSideColors,
@@ -151,6 +148,8 @@ heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal
           cellnote = ifelse(as.matrix(t(p.stats)) < 0.05, "*", ""),
           notecol = 'black', notecex = 2)
 dev.off() 
+
+
 
 
 
@@ -207,4 +206,4 @@ pheatmap(t(top_acts_mat[,to.use]),
          border_color = NA, color=my_color, breaks = my_breaks,
          clustering_method = "ward.D2", cluster_cols = FALSE, cluster_rows = FALSE) 
 dev.off()
-
+write.table(top_acts_mat[,to.use], file = "QC_Plots/Plasma_Gene_Set_Enrichment_Heatmap_ordered_subclass_level3.txt", sep = "\t", quote = FALSE)
