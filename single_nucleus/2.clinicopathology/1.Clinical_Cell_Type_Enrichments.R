@@ -22,7 +22,10 @@ load("color_factors.robj")
 
 ###By Clusters
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
+KB <- subset(KB, tissue_type %in% "Biopsy")
 KB
+table(KB$region_level2)
+table(KB$condition_level1)
 
 #sample info
 Ref <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "HRT",]$patient)) 
@@ -32,9 +35,16 @@ DMR <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "DM-R",]$pati
 NHT <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "NHT",]$patient))
 RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]$patient))
 sample.tab <- rbind(Ref,AKI,CKD,DMR,NHT,RT.UCS)
-saveRDS(sample.tab, file = "Condition_Group_composition_sample_table.RDS")
+sample.tab
+#Ref      41
+#AKI      38
+#CKD      73
+#DMR      11
+#NHT       2
+#RT.UCS    0
 
-#Differential composition analysis
+
+##Differential composition analysis
 KB <- subset(KB, condition_level1 %in% c("HRT","AKI","CKD"))
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.clusters))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
@@ -50,8 +60,8 @@ df_comp_relative$cond[df_cond$CKD != 0] <- "CKD"
 df_comp_relative$cond <- factor(df_comp_relative$cond, levels = c("HRT","AKI","CKD"))
 colnames(df_comp_relative) <- gsub("-","",colnames(df_comp_relative))
 colnames(df_comp_relative) <- gsub(" ","",colnames(df_comp_relative))
-saveRDS(df_comp_relative, file = "Condition_Group_composition_V2_Clusters.RDS")
-#df_comp_relative <- readRDS("Condition_Group_composition_V2_Clusters.RDS")
+saveRDS(df_comp_relative, file = "Condition_Group_composition_V2_Clusters_biopsy.RDS")
+df_comp_relative <- readRDS("Condition_Group_composition_V2_Clusters_biopsy.RDS")
 
 clusters <- colnames(df_comp_relative)[!colnames(df_comp_relative) %in% "cond"]
 
@@ -70,7 +80,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-AKI_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-AKI_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 x <- "HRT"
 y <- "CKD"
@@ -86,7 +96,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-CKD_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-CKD_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 x <- "AKI"
 y <- "CKD"
@@ -102,10 +112,10 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_AKI-CKD_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_AKI-CKD_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 
-#Comp of AIN/ATN
+##Comp of AIN/ATN
 table(KB$adj_cm_ati.ain)
 AIN <- unique(KB@meta.data[KB@meta.data$adj_cm_ati.ain %in% c("ADJ_CM_AIN","ADJ_CM_ATI_POSSIBLY,ADJ_CM_AIN","ADJ_CM_ATI,ADJ_CM_AIN"),]$patient)
 #n=11
@@ -127,7 +137,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-AKI-ATI_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-AKI-ATI_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 p.table <- do.call(rbind, lapply(clusters, function(ct) {
   print(paste("Running for Cluster:", ct))
@@ -140,7 +150,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-AKI-AIN_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-AKI-AIN_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 x <- "AKI"
 y <- "AKI"
@@ -156,10 +166,10 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-ATI-AIN_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-ATI-AIN_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 
-#Comp of CKD Risk
+##Comp of CKD Risk
 table(KB$ckd_stageC)
 CKD.hi <- unique(KB@meta.data[KB@meta.data$ckd_stageC %in% c("high risk","very high risk"),]$patient)
 #n=26
@@ -181,7 +191,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-CKD-HighRisk_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-CKD-HighRisk_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 
 x <- "CKD"
@@ -198,11 +208,15 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
 
-#Cell type proportions for eGFR groups
+
+
+###Cell type proportions for eGFR groups
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
+KB <- subset(KB, tissue_type %in% "Biopsy")
+
 #Stage 1 with normal or high GFR (GFR > 90 mL/min)
 #Stage 2 Mild CKD (GFR = 60-89 mL/min)
 #Stage 3A Moderate CKD (GFR = 45-59 mL/min)
@@ -213,16 +227,16 @@ table(KB$baseline_eGFR_binned)
 
 KB$eGFR_group <- "NA"
 KB@meta.data[KB@meta.data$baseline_eGFR_binned %in% c("0-9 ml/min/1.73m2",
-                                                              "20-29 ml/min/1.73m2"),]$eGFR_group <- "<30"
+                                                      "20-29 ml/min/1.73m2"),]$eGFR_group <- "<30"
 KB@meta.data[KB@meta.data$baseline_eGFR_binned %in% c("30-39 ml/min/1.73m2",
-                                                              "40-49 ml/min/1.73m2","50-59 ml/min/1.73m2"),]$eGFR_group <- "30-60"
+                                                      "40-49 ml/min/1.73m2","50-59 ml/min/1.73m2"),]$eGFR_group <- "30-60"
 KB@meta.data[KB@meta.data$baseline_eGFR_binned %in% c(">60 ml/min/1.73m2","60-69 ml/min/1.73m2",
                                                       "70-79 ml/min/1.73m2","80-89 ml/min/1.73m2",
                                                       "90-99 ml/min/1.73m2",
                                                       "100-109 ml/min/1.73m2","110-119 ml/min/1.73m2",
                                                       "120-129 ml/min/1.73m2","130-139 ml/min/1.73m2",
                                                       "150-159 ml/min/1.73m2","170-179 ml/min/1.73m2"
-                                                      ),]$eGFR_group <- ">60"
+),]$eGFR_group <- ">60"
 
 KB <- subset(KB, eGFR_group %in% c("<30","30-60",">60"))
 table(KB$region_level2)
@@ -237,9 +251,17 @@ RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]
 group1 <- length(unique(KB@meta.data[KB@meta.data$eGFR_group == ">60",]$patient))
 group2 <- length(unique(KB@meta.data[KB@meta.data$eGFR_group %in% c("<30","30-60"),]$patient))
 sample.tab <- rbind(Ref,AKI,CKD,DMR,NHT,RT.UCS,group1,group2)
-saveRDS(sample.tab, file = "eGFR_Group_composition_sample_table.RDS")
+sample.tab
+#Ref      16
+#AKI      34
+#CKD      64
+#DMR      11
+#NHT       0
+#RT.UCS    0
+#group1   69
+#group2   56
 
-#Differential composition analysis 
+##Differential composition analysis - Cluster level
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.clusters))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
 df_comp <- df_comp[select.donors, ]
@@ -253,7 +275,7 @@ df_comp_relative$cond[df_cond$'30-60' != 0] <- "eGFR <60"
 df_comp_relative$cond <- factor(df_comp_relative$cond, levels = c("eGFR >60", "eGFR <60"))
 colnames(df_comp_relative) <- gsub("-","",colnames(df_comp_relative))
 colnames(df_comp_relative) <- gsub(" ","",colnames(df_comp_relative))
-saveRDS(df_comp_relative, file = "eGFR_Group_composition_V2_Clusters.RDS")
+saveRDS(df_comp_relative, file = "eGFR_Group_composition_V2_Clusters_biopsy.RDS")
 
 clusters <- colnames(df_comp_relative)[!colnames(df_comp_relative) %in% "cond"]
 
@@ -272,9 +294,12 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "eGFR_Group_composition_V2_Clusters_P-Values.RDS")
+saveRDS(p.table, file = "eGFR_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 
-#Cell type proportions for age groups (HRT only)
+
+
+
+###Cell type proportions for age groups (HRT only)
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
 KB <- subset(KB, condition_level1 == "HRT")
 table(KB$age_binned)
@@ -288,16 +313,21 @@ table(KB$region_level2)
 
 #sample info
 Ref <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "HRT",]$patient)) 
+AKI <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "AKI",]$patient))
+CKD <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "CKD",]$patient))
+DMR <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "DM-R",]$patient))
+NHT <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "NHT",]$patient))
+RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]$patient))
 group1 <- length(unique(KB@meta.data[KB@meta.data$age_group == "<50",]$patient))
 group2 <- length(unique(KB@meta.data[KB@meta.data$age_group %in% c(">=50"),]$patient))
-sample.tab <- rbind(Ref,group1,group2)
+sample.tab <- rbind(Ref,AKI,CKD,DMR,NHT,RT.UCS,group1,group2)
 sample.tab
 #Ref      72
 #group1   34
 #group2   38
 
 
-#Differential composition analysis
+##Differential composition analysis - Subclass level
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.clusters))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
 df_comp <- df_comp[select.donors, ]
@@ -336,10 +366,13 @@ saveRDS(p.table, file = "HRT_Age_Group_composition_V2_Clusters_P-Values.RDS")
 
 
 ### By subclass.l3 
+###By Condition type
+#Load data and remove ref samples with high altered states
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
 KB
 table(KB$region_level2)
 table(KB$condition_level1)
+KB <- subset(KB, tissue_type %in% "Biopsy")
 
 #sample info
 Ref <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "HRT",]$patient)) 
@@ -349,15 +382,17 @@ DMR <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "DM-R",]$pati
 NHT <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "NHT",]$patient))
 RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]$patient))
 sample.tab <- rbind(Ref,AKI,CKD,DMR,NHT,RT.UCS)
+#saveRDS(sample.tab, file = "Condition_Group_composition_sample_table.RDS")
 sample.tab
-#Ref      72
-#AKI      40
-#CKD      84
+#Ref      41
+#AKI      38
+#CKD      73
 #DMR      11
-#NHT       5
-#RT.UCS   12
+#NHT       2
+#RT.UCS    0
 
-#Differential composition analysis
+
+##Differential composition analysis
 KB <- subset(KB, condition_level1 %in% c("HRT","AKI","CKD"))
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.subclass.l3))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
@@ -373,8 +408,8 @@ df_comp_relative$cond[df_cond$CKD != 0] <- "CKD"
 df_comp_relative$cond <- factor(df_comp_relative$cond, levels = c("HRT","AKI","CKD"))
 colnames(df_comp_relative) <- gsub("-","",colnames(df_comp_relative))
 colnames(df_comp_relative) <- gsub(" ","",colnames(df_comp_relative))
-saveRDS(df_comp_relative, file = "Condition_Group_composition_V2_Subclass.l3.RDS")
-#df_comp_relative <- readRDS("Condition_Group_composition_V2_Subclass.l3.RDS")
+saveRDS(df_comp_relative, file = "Condition_Group_composition_V2_Subclass.l3_biopsy.RDS")
+df_comp_relative <- readRDS("Condition_Group_composition_V2_Subclass.l3_biopsy.RDS")
 
 clusters <- colnames(df_comp_relative)[!colnames(df_comp_relative) %in% "cond"]
 
@@ -393,7 +428,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 x <- "HRT"
 y <- "CKD"
@@ -409,7 +444,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 x <- "AKI"
 y <- "CKD"
@@ -425,7 +460,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_AKI-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_AKI-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
 ##Comp of AIN/ATN
@@ -450,7 +485,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-AKI-ATI_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-AKI-ATI_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 p.table <- do.call(rbind, lapply(clusters, function(ct) {
   print(paste("Running for Cluster:", ct))
@@ -463,7 +498,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-AKI-AIN_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-AKI-AIN_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 x <- "AKI"
 y <- "AKI"
@@ -479,10 +514,10 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-ATI-AIN_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-ATI-AIN_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
-#Comp of CKD Risk
+##Comp of CKD Risk
 table(KB$ckd_stageC)
 CKD.hi <- unique(KB@meta.data[KB@meta.data$ckd_stageC %in% c("high risk","very high risk"),]$patient)
 #n=26
@@ -504,7 +539,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_Ref-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_Ref-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
 x <- "CKD"
@@ -521,11 +556,14 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
-#Cell type proportions for eGFR groups
+
+
+###Cell type proportions for eGFR groups
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
+KB <- subset(KB, tissue_type %in% "Biopsy")
 
 #Stage 1 with normal or high GFR (GFR > 90 mL/min)
 #Stage 2 Mild CKD (GFR = 60-89 mL/min)
@@ -561,17 +599,18 @@ RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]
 group1 <- length(unique(KB@meta.data[KB@meta.data$eGFR_group == ">60",]$patient))
 group2 <- length(unique(KB@meta.data[KB@meta.data$eGFR_group %in% c("<30","30-60"),]$patient))
 sample.tab <- rbind(Ref,AKI,CKD,DMR,NHT,RT.UCS,group1,group2)
+#saveRDS(sample.tab, file = "eGFR_Group_composition_sample_table.RDS")
 sample.tab
-#Ref      46
-#AKI      36
-#CKD      74
+#Ref      16
+#AKI      34
+#CKD      64
 #DMR      11
-#NHT       2
-#RT.UCS    3
-#group1  105
-#group2   66
+#NHT       0
+#RT.UCS    0
+#group1   69
+#group2   56
 
-#Differential composition analysis
+##Differential composition analysis - Cluster level
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.subclass.l3))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
 df_comp <- df_comp[select.donors, ]
@@ -585,7 +624,7 @@ df_comp_relative$cond[df_cond$'30-60' != 0] <- "eGFR <60"
 df_comp_relative$cond <- factor(df_comp_relative$cond, levels = c("eGFR >60", "eGFR <60"))
 colnames(df_comp_relative) <- gsub("-","",colnames(df_comp_relative))
 colnames(df_comp_relative) <- gsub(" ","",colnames(df_comp_relative))
-saveRDS(df_comp_relative, file = "eGFR_Group_composition_V2_Subclassl3.RDS")
+saveRDS(df_comp_relative, file = "eGFR_Group_composition_V2_Subclassl3_biopsy.RDS")
 
 clusters <- colnames(df_comp_relative)[!colnames(df_comp_relative) %in% "cond"]
 
@@ -604,11 +643,15 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "eGFR_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "eGFR_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
-#Cell type proportions for age groups (HRT only)
+
+
+
+###Cell type proportions for age groups (HRT only)
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
+#KB <- subset(KB, tissue_type %in% "Biopsy")
 KB <- subset(KB, condition_level1 == "HRT")
 table(KB$age_binned)
 
@@ -621,15 +664,21 @@ table(KB$region_level2)
 
 #sample info
 Ref <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "HRT",]$patient)) 
+AKI <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "AKI",]$patient))
+CKD <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "CKD",]$patient))
+DMR <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "DM-R",]$patient))
+NHT <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "NHT",]$patient))
+RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]$patient))
 group1 <- length(unique(KB@meta.data[KB@meta.data$age_group == "<50",]$patient))
 group2 <- length(unique(KB@meta.data[KB@meta.data$age_group %in% c(">=50"),]$patient))
-sample.tab <- rbind(Ref,group1,group2)
+sample.tab <- rbind(Ref,AKI,CKD,DMR,NHT,RT.UCS,group1,group2)
 sample.tab
 #Ref      72
 #group1   34
 #group2   38
 
-#Differential composition analysis - Subclass level
+
+##Differential composition analysis - Subclass level
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.subclass.l3))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
 df_comp <- df_comp[select.donors, ]
@@ -671,12 +720,18 @@ saveRDS(p.table, file = "HRT_Age_Group_composition_V2_Subclassl3_P-Values.RDS")
 
 
 
+
+
 ###Additional Clinical Phenotypes by subclass.l3 ----------------------------------------
 
 KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
+KB <- subset(KB, tissue_type %in% "Biopsy")
 KB
+table(KB$region_level2)
+table(KB$condition_level1)
 
-#Differential composition analysis
+
+##Differential composition analysis
 KB <- subset(KB, condition_level1 %in% c("HRT","AKI","CKD"))
 clin.data <- read.csv("kpmp-core-clinical-data-2024-08-05.csv")
 rownames(clin.data) <- clin.data$study_id
@@ -702,6 +757,7 @@ table(KB$condition)
 
 KB <- subset(KB, condition %in% c("HRT","AKI","DKD","H-CKD"))
 
+
 df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.subclass.l3))
 select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
 df_comp <- df_comp[select.donors, ]
@@ -715,13 +771,13 @@ df_comp_relative$cond[df_cond$DKD != 0] <- "DKD"
 df_comp_relative$cond[df_cond$'H-CKD' != 0] <- "H-CKD"
 table(df_comp_relative$cond)
 #AKI   DKD H-CKD   HRT 
-#28    31    24    72 
+#28    31    24    41 
 
 df_comp_relative$cond <- factor(df_comp_relative$cond, levels = c("HRT","AKI","DKD","H-CKD"))
 colnames(df_comp_relative) <- gsub("-","",colnames(df_comp_relative))
 colnames(df_comp_relative) <- gsub(" ","",colnames(df_comp_relative))
-saveRDS(df_comp_relative, file = "Adj-Condition_Group_composition_V2_Subclass.l3.RDS")
-#df_comp_relative <- readRDS("Adj-Condition_Group_composition_V2_Subclass.l3.RDS")
+saveRDS(df_comp_relative, file = "Adj-Condition_Group_composition_V2_Subclass.l3_biopsy.RDS")
+df_comp_relative <- readRDS("Adj-Condition_Group_composition_V2_Subclass.l3_biopsy.RDS")
 
 clusters <- colnames(df_comp_relative)[!colnames(df_comp_relative) %in% "cond"]
 
@@ -740,7 +796,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Adj-Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Adj-Condition_Ref-AKI_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 x <- "HRT"
 y <- "DKD"
@@ -756,7 +812,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Adj-Condition_Ref-DKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Adj-Condition_Ref-DKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
 x <- "HRT"
@@ -773,7 +829,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Adj-Condition_Ref-H-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Adj-Condition_Ref-H-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
 x <- "H-CKD"
@@ -790,7 +846,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Adj-Condition_H-CKD-DKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Adj-Condition_H-CKD-DKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
 
@@ -808,7 +864,7 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Adj-Condition_AKI-DKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Adj-Condition_AKI-DKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 
 
 x <- "AKI"
@@ -825,4 +881,4 @@ p.table <- do.call(rbind, lapply(clusters, function(ct) {
 }))
 
 rownames(p.table) <- clusters
-saveRDS(p.table, file = "Adj-Condition_AKI-H-CKD_Group_composition_V2_Subclassl3_P-Values.RDS")
+saveRDS(p.table, file = "Adj-Condition_AKI-H-CKD_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
