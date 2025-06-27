@@ -376,6 +376,7 @@ KB@assays$pathwaysmlm@data <- KB@assays$pathwaysmlm@scale.data
 
 #Use only Sham and IRI groups
 KB <- subset(KB, condition_level3 %in% c("Ref"), invert = TRUE)
+Idents(KB) <- "v2.subclass.l3"
 
 # Extract activities from object as a long dataframe
 df <- t(as.matrix(KB@assays$pathwaysmlm@data)) %>%
