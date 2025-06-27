@@ -29,16 +29,18 @@ load("Plots/Atlas_V2_Cluster_Dendrogram_05082024_label-order.rda")
 order
 
 ###Read in pvalue tables
-cond.ref.aki.pVal <- readRDS("Condition_Ref-AKI_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ref.ckd.pVal <- readRDS("Condition_Ref-CKD_Group_composition_V2_Clusters_P-Values.RDS")
-cond.aki.ckd.pVal <- readRDS("Condition_AKI-CKD_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ref.ati.pVal <- readRDS("Condition_Ref-AKI-ATI_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ref.ain.pVal <- readRDS("Condition_Ref-AKI-AIN_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ref.ain.pVal <- readRDS("Condition_Ref-AKI-AIN_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ati.ain.pVal <- readRDS("Condition_Ref-ATI-AIN_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ref.ckd.hi.pVal <- readRDS("Condition_Ref-CKD-HighRisk_Group_composition_V2_Clusters_P-Values.RDS")
-cond.ckd.lo.ckd.hi.pVal <- readRDS("Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Clusters_P-Values.RDS")
-eGFR.pVal <- readRDS("eGFR_Group_composition_V2_Clusters_P-Values.RDS")
+cond.ref.aki.pVal <- readRDS("Condition_Ref-AKI_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ref.ckd.pVal <- readRDS("Condition_Ref-CKD_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.aki.ckd.pVal <- readRDS("Condition_AKI-CKD_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ref.ati.pVal <- readRDS("Condition_Ref-AKI-ATI_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ref.ain.pVal <- readRDS("Condition_Ref-AKI-AIN_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ref.ain.pVal <- readRDS("Condition_Ref-AKI-AIN_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ati.ain.pVal <- readRDS("Condition_Ref-ATI-AIN_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ref.ckd.hi.pVal <- readRDS("Condition_Ref-CKD-HighRisk_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+cond.ckd.lo.ckd.hi.pVal <- readRDS("Condition_CKD-LowRisk-CKD-HighRisk_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
+
+
+eGFR.pVal <- readRDS("eGFR_Group_composition_V2_Clusters_P-Values_biopsy.RDS")
 age.pVal <- readRDS("HRT_Age_Group_composition_V2_Clusters_P-Values.RDS")
 IF.pVal <- readRDS("Interstitial-Fibrosis_Group_composition_V2_Clusters_P-Values.RDS")
 TA.pVal <- readRDS("Tubular-Atrophy_Group_composition_V2_Clusters_P-Values.RDS")
