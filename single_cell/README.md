@@ -1,1 +1,1 @@
-Code for generating single cell RNA-seq Atlas v2
+Code for integrating the single cell/single nucleus immune cells
