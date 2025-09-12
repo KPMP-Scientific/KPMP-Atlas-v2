@@ -1,0 +1,29 @@
+from snakemake.utils import min_version
+min_version("6.0")
+import os
+import pandas as pd
+
+
+configfile: "config.yaml"
+
+
+rule all:
+    input:
+        'data/sample_metadata.csv',
+
+
+module conversion:
+    snakefile: 'rules/conversion.smk'
+    config: config
+use rule * from conversion as PP_*
+
+module LR:
+    snakefile: 'rules/LR.smk'
+    config: config
+use rule * from LR as LR_*
+
+rule all:
+    input:
+        'plots/LR/snRNA/CCL2_CCR2_single_lr_greyed.pdf', # corresponds to Fig 4i
+        'plots/LR/snRNA/IL1B_IL1R1_single_lr_greyed.pdf', # corresponds to Fig 4k
+        expand('plots/LR/snRNA/{celltype}_liana_plot.pdf', celltype=['PT', 'TAL']) # corresponds to Extended data Fig 11 and Supplementary Fig 11, respectively

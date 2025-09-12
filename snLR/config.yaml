@@ -1,0 +1,8 @@
+LR:
+  snRNA:
+    PT:
+      sources: ["aPT2","aPT1","aPT-S1_S2","PT-S1","PT-S2","frPT-S1_S2","PT-S3","frPT-S3","cycPT"]
+      targets: ["C-FIB", "C_M-FIB", "C-FIB-PATH", "C-FIB-OSMRhi", "C-FIB-OSMRlo", "C-MYOF",  "pvFIB", "pvMYOF", "B", "PL", "Naive Th", "MAIT", "CD8 TEM_TRM", "resMAC-LYVE1", "resMAC-HLAIIhi", "ncMON", "MON", "pDC", "moMAC-HBEGF", "moMAC-CXCL10"]
+    TAL:
+      sources: ["aTAL1","aTAL2","C_M-TAL-A","C-TAL-A","C_M-TAL-B","C-TAL-B","frTAL","cycTAL"]
+      targets: ["IM-FIB", "OM-FIB", "C_M-FIB", "C-MYOF", "B", "PL", "Naive Th", "MAIT","ncMON", "mDC","cDC1"]
