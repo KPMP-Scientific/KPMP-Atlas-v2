@@ -1,4 +1,6 @@
-## Initial Analysis has been carried using Squidpy 
-## Cell Type annotation using TACCO with the sn data Atlas v2 as reference object
-## Batch Correction using scvi environment- reSOLVI tool 
-## Neighborhood analysis using BANKSY
+### Pipeline Summary
+
+- **Initial analysis**: Squidpy  
+- **Cell type annotation**: TACCO with snRNA-seq Atlas v2 as reference  
+- **Batch correction**: reSOLVI (scVI environment)  
+- **Neighborhood analysis**: BANKSY
