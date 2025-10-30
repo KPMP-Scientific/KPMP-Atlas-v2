@@ -21,5 +21,5 @@ pnpm run deploy
 
 Will deploy to gh-pages branch, with published site at:
 
-https://keller-mark.github.io/KPMP-Atlas-v2/
+https://KPMP-Scientific.github.io/KPMP-Atlas-v2/
 
