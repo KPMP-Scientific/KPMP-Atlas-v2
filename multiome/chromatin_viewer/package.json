@@ -8,7 +8,7 @@
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist --dest chromatin-viewer"
   },
   "dependencies": {
     "@material-ui/core": "^4.12.4",
