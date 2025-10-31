@@ -1,19 +1,24 @@
-# KPMP Chromatin Viewer for Atlas v2
+# Chromatin Viewer for KPMP Atlas v2 multiome data
 
-Development:
+## Setup
 
 ```sh
 pnpm install
+```
+
+## Development
+
+```sh
 pnpm run start
 ```
 
-Build:
+### Build
 
 ```sh
 pnpm run build
 ```
 
-Deploy:
+### Deploy
 
 ```sh
 pnpm run deploy
@@ -21,5 +26,5 @@ pnpm run deploy
 
 Will deploy to gh-pages branch, with published site at:
 
-https://KPMP-Scientific.github.io/KPMP-Atlas-v2/
+https://KPMP-Scientific.github.io/KPMP-Atlas-v2/chromatin-viewer/
 

@@ -1,7 +1,7 @@
 {
   "name": "kpmp-transepi-viewer-2025",
   "version": "0.1.0",
-  "homepage": "https://kpmp-scientific.github.io/KPMP-Atlas-v2/",
+  "homepage": "https://kpmp-scientific.github.io/KPMP-Atlas-v2/chromatin-viewer/",
   "private": true,
   "type": "module",
   "scripts": {

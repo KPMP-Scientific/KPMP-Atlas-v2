@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  base: "/KPMP-Atlas-v2/",
+  base: "/KPMP-Atlas-v2/chromatin-viewer/",
   build: {
     target: "esnext",
   },
