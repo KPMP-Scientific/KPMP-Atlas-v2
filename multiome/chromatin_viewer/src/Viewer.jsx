@@ -617,6 +617,7 @@ export default function Viewer(props) {
 										Associated fragment pileups were saved as bedGraph files, then converted to bigWig using the bedGraphToBigWig tool.
 										<br/>
 										<br/>
+										<a href="https://doi.org/10.1101/2025.09.26.678707" target="_blank" style={{ fontWeight: 'bold' }}>KPMP Atlas V2 Preprint on bioRxiv</a><br/>
 										<a href="https://github.com/KPMP-Scientific/KPMP-Atlas-v2" target="_blank">KPMP Atlas V2 GitHub repository</a><br/>
 										{/*<Typography variant="h5">Publication</Typography>
 										
