@@ -173,7 +173,7 @@ const PALETTE = [
 ];
 
 
-const baseUrlV3 = 'https://data-2.vitessce.io/kpmp-atlas-v2/transepinome/bigwigs_from_blue_20251013';
+const baseUrlV3 = 'https://data-2.vitessce.io/kpmp-atlas-v2/transepinome/bigwigs_from_blue_20251110';
 //const baseUrlV3 = 'http://localhost:3004';
 
 const subclass_l3_from_table = abbrevRows.map(d => d.clusterAbbrev);
@@ -188,7 +188,7 @@ let subclass_l3 = ['ATL', 'B', 'C-EC-PTC', 'C-FIB', 'C-FIB-OSMRhi', 'C-FIB-OSMRl
 
 const SUBTYPE_TO_BIGWIG_URL = Object.fromEntries(
 	subclass_l3.map(subType => {
-		const url = `${baseUrlV3}/${encodeURIComponent(subType)}.BigWig`;
+		const url = `${baseUrlV3}/${encodeURIComponent(subType)}.RPGCnorm.bigwig`;
 		return [subType, url];
 	})
 );
@@ -342,7 +342,7 @@ export default function Viewer(props) {
 		}
 	}, [hgRef, gene, viewConfLoaded]);
 
-	const [selectedCellTypes, setSelectedCellTypes] = useState(['POD']);
+	const [selectedCellTypes, setSelectedCellTypes] = useState(['aPT2', 'aPT1', 'aPT-S3', 'frPT-S3']);
 
 	function handleChange(event) {
 		setSelectedCellTypes(event.target.value)
