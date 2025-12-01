@@ -123,7 +123,7 @@ class Main_class
     public static void Main(params string[] arguments)
     {
         #region User input needed
-        string overall_directory = "D:/KPMP_disease_atlas/KPMP_v2_data/KPMP_atlas_v2_max5000cells_500DEGs/";
+        string overall_directory = "D:/KPMP_v2_atlas/KPMP_v2_data/KPMP_atlas_v2_max5000cells_500DEGs/";
         #endregion
 
         string assay = "SNboth";
@@ -148,3 +148,4 @@ class Main_class
     }
 
 }
+
