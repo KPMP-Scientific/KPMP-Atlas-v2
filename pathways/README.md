@@ -9,14 +9,14 @@
 ## Requirements
 - As instructed in 'KPMP_atlas_v2_calculate_degs_and_pathways.R', the KPMP atlas v2 Single Nucleus seurat object has to be downloaded and copied into the 'SN_RNAseq_atlas_v2_2024November01' subdirectory. Download the 'Single-nucleus RNA-seq of the Adult Human Kidney (Version 2.0)' from 'https://cellxgene.cziscience.com/collections/9c9d04c4-8899-417f-bb6f-6107dcadf14f' (see 'https://www.kpmp.org/doi-collection/10-48698-16dd-vj20' for summary information).
 - The application MBC PathNet has to be downloaded from 'www.mbc-ontology.org' / 'https://github.com/SBCNY/Molecular-Biology-of-the-Cell' and copied into the directory specified in 'KPMP_atlas_v2_calculate_degs_and_pathways.R'
-- To run/call the MBC PathNet in a Linux environment, the 'mono-xsp4' or 'mono-devel' package has to be downloaded from 'mono-project.com' ("an open source implementation of Microsoft's .NET Framework","sponsored by Microsoft"), as specified in the MBC PathNet ReadMe file:<br>
+- To run/call the MBC PathNet in a Linux environment, the 'mono-xsp4' or 'mono-devel' package has to be downloaded from 'mono-project.com' ("an open source implementation of Microsoft's .NET Framework", "sponsored by Microsoft"), as specified in the MBC PathNet ReadMe file:<br>
   sudo apt update<br>
   sudo apt install mono-xsp4see<br>
 - To call the the scripts within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64' in a LINUX environment, the NET 8 runtime has to be installed as described within 'KPMP_atlas_v2_calculate_degs_and_pathways.R'.
 - The script 'Generate_pathwaySubtype_networks' can be run on Windows with Microsoft Visual Studio.
 
 ## Additional information
-- The subfolder 'Average_DEGs_and_do_postHocPowerAnalysis' contains the source C# code that was published to generate the files within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64', using Microsoft Visual Studio. While the source code is not used, the exe file will be called from within R-script 'KPMP_atlas_v2_calculate_degs_and_pathways.R'.
+- The subfolder 'Average_DEGs_and_do_postHocPowerAnalysis' contains the source C# code that was published to generate the files within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64', using Microsoft Visual Studio. While the source code is not used, the exe file will be called by the R-script 'KPMP_atlas_v2_calculate_degs_and_pathways.R'.
 - The script 'KPMP_atlas_v2_calculate_degs_and_pathways.R' was only tested in a LINUX environment, using R Studio.
 - The script 'Generate_pathwaySubtype_networks' can only be run in a Windows environment using Visual Studio.
 - The script 'Whole_cell_functions_in_cellTypes.R' was only tested in a Windows environment, using R Studio.
