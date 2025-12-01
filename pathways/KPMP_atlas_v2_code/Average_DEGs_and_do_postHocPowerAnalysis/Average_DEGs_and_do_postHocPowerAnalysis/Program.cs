@@ -36,7 +36,7 @@ class Main_class
         string cellType = "PTsl3";
 
         //System.Diagnostics.Debugger.Launch();
-        string overall_directory = "D:/KPMP_disease_atlas/KPMP_data/KPMP_atlas_v2_max5000cells_500DEGs_PHP/";
+        string overall_directory = "D:/KPMP_v2_atlas/KPMP_v2_data/KPMP_atlas_v2_max5000cells_500DEGs_PHP/";
         string report_directory = overall_directory;
         //string assay_cellTypeGroup_subtype_level = "SNboth_PTsl3";
         string assay_cellTypeGroup_subtype_level = "SNboth_" + cellType;
@@ -218,3 +218,4 @@ class Main_class
         }
     }
 }
+
