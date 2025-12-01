@@ -157,7 +157,6 @@ unregister <- function() {
      { max_cores_count = 38; }
      tmp_directory = "/data/tmp/"
      base_directory = paste("/data/KPMP_v2_atlas/KPMP_v2_data/") #ensure that directories end with "/"
-     #base_directory = paste("D:/KPMP_disease_atlas/KPMP_data/") #ensure that directories end with "/"
      mbc_pathNet_directory = "/data/MBCO_windows_application/" #Download MBCPathNet from 'mbc-ontology.org'/'https://github.com/SBCNY/Molecular-Biology-of-the-Cell' and copy the content of the folder 'MBCO_windows_application' (windows is just a name) it into the specified directory,
                                                                #for use in LINUX, download mono as described in the ReadMe file found at the link above:
                                                                    #sudo apt update
