@@ -11,8 +11,8 @@ library(ggplotify)
 library(ggpubr)
 
 ################# User-input needed ##############################
-overall_directory = "D:/KPMP_disease_atlas/KPMP_data/"
-working_directory = "D:/AACode/R_code/KPMP_atlas_v2_code/"
+overall_directory = "D:/KPMP_disease_atlas/KPMP_v2_data/"
+working_directory = "D:/KPMP_disease_atlas/KPMP_atlas_v2_code/"
 setwd(working_directory)
 ################# User-input needed ##############################
 
@@ -458,6 +458,7 @@ Final_plot = Final_plot + plot_layout(ncol = 1) & theme(plot.margin = margin(0, 
 
 print(Final_plot)
 dev.off()
+
 
 
 
