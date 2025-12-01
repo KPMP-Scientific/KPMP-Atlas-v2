@@ -167,6 +167,7 @@ unregister <- function() {
      name_of_this_script = "KPMP_atlas_v2_calculate_degs_and_pathways.R"
      working_directory = "/data/KPMP_disease_atlas/KPMP_atlas_v2_code/"; #has to contain the script 'KPMP_atlas_v2_shared_code.R'
      ##download the KPMP v2 atlas Seurat object and copy it into the 'SN_RNAseq_atlas_v2_2024November01' subdirectory as specified in 'Information about necessary directories and files' below
+     ##adjust file name of and read function for the seurat object in 'read_sn_rnaSeq'
      
      ##ensure that the user has read and write rights in directories
      ##Please also see Set parameter for PostHocPower analysis (if calculateFinalDegs1_doPostHocPower2==2) to adjust parameters to available memory on used computer
@@ -403,7 +404,7 @@ if (read_sn_rnaSeq_altlas_v2_2024November)
   directory = paste(base_directory,"/SN_RNAseq_atlas_v2_2024November01/",sep='');
   destDirectory = paste(directory,"full_kidney_count_set_0424/",sep='')
   study_baseName = "SN RNAseq atlas v2 2024November01"
-  seurat_object_fileName = "Kidney_AtlasV2_Seurat_11012024.rds"
+  seurat_object_fileName = "Kidney_AtlasV2_Seurat_11012024.rds" #f337b525-c8f7-4c96-8cfe-f258a9f5ca48
   complete_seurat_object_fileName = paste(directory,seurat_object_fileName,sep='')
   seurat_object_all_assays = LoadSeuratRds(complete_seurat_object_fileName)
   
