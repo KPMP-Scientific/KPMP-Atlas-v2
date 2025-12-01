@@ -398,7 +398,7 @@ unregister <- function() {
   hclust.function = function(x) hclust(x,method="average")
 
 if (read_sn_rnaSeq_altlas_v2_2024November)
-{#Begin - read_sn_rnaSeq_2023July
+{#Begin - read_sn_rnaSeq
   print(paste("Read SNRNAseq/Multiome seurat object",sep=''))
   directory = paste(base_directory,"/SN_RNAseq_atlas_v2_2024November01/",sep='');
   destDirectory = paste(directory,"full_kidney_count_set_0424/",sep='')
@@ -416,7 +416,7 @@ if (read_sn_rnaSeq_altlas_v2_2024November)
                                            scale.factor = 10000,
                                            margin = 1)
   
-  {#Begin - Set patient 3535 to NHT
+  {#Begin - Split patient 3535 into two patients with NHT and HRT disease condition
     index3535 = which(seurat_object_all_assays$patient=="3535")
     indexNHT = which(seurat_object_all_assays$condition_level3=="NHT")
     indexHRT = which(seurat_object_all_assays$condition_level3=="HRT")
@@ -426,7 +426,7 @@ if (read_sn_rnaSeq_altlas_v2_2024November)
     stopifnot(length(index3535_hrt)>0)
     stopifnot(length(index3535_nht) + length(index3535_hrt) == length(index3535))
     seurat_object_all_assays$condition_level3[index3535_hrt] = "NHT"
-  }#End - Set patient 3535 to NHT
+  }#End -  Split patient 3535 into two patients with NHT and HRT disease condition
   
   total_readCounts = unique(round(colSums(expm1(seurat_object_all_assays[["RNA"]]$data))))
   stopifnot(length(total_readCounts)==1)
@@ -460,7 +460,7 @@ if (read_sn_rnaSeq_altlas_v2_2024November)
 
   seurat_object_all_assays$Cell_type = as.character(seurat_object_all_assays$Cell_type)
   seurat_object_all_assays$Cell_subtype = as.character(seurat_object_all_assays$Cell_subtype)
-}#End - read_sn_rnaSeq_2023July
+}#End - read_sn_rnaSeq
 
 {#Begin - Add exact eGFR from clinical metadata spreadsheet
     complete_metadata_fileName = paste(base_directory,"Metadata/","20250606_OpenAccessClinicalData.csv",sep='')
