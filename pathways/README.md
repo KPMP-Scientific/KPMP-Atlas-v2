@@ -1,4 +1,4 @@
-# Pathway analysis of Atlas V2 cell subtypes, states and disease conditions using single nucleus transcriptomics
+# Pathway analysis for the Human Kidney Tissue Atlas V2 cell subtypes, states and disease conditions using single nucleus transcriptomics
 
 1) To start the analysis open the 'KPMP_atlas_v2_calculate_degs_and_pathways.R' file in the folder 'KPMP_atlas_v2_code' subfolder. Follow the instructions in the section 'User input is needed here'.
 2) This R-script will call the files within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64' and the desktop/command line application MBC PathNet.
@@ -11,7 +11,7 @@
 - To run/call the MBC PathNet in a Linux environment, the 'mono-xsp4' or 'mono-devel' package has to be downloaded from 'mono-project.com' ("an open source implementation of Microsoft's .NET Framework","sponsored by Microsoft"), as specified in the MBC PathNet ReadMe file:<br>
   sudo apt update<br>
   sudo apt install mono-xsp4see<br>
-- To call the the scripts within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64' in a LINUX environment, the NET 8 runtime has to be installed as described within 'KPMP_atlas_v2_calculate_degs_and_pathways.R' (sudo apt install -y dotnet-runtime-8.0).
+- To call the the scripts within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64' in a LINUX environment, the NET 8 runtime has to be installed as described within 'KPMP_atlas_v2_calculate_degs_and_pathways.R'.
 - The script 'Generate_pathwaySubtype_networks' can be run on Windows with Microsoft Visual Studio.
 
 ## Additional information
