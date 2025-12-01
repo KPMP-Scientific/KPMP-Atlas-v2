@@ -18,7 +18,7 @@
 - The subfolder 'Average_DEGs_and_do_postHocPowerAnalysis' contains the source C# code that was published to generate the files within 'Average_DEGs_and_do_postHocPowerAnalysis_linux_x64', using Microsoft Visual Studio. While the source code is not used, the exe file will be called from within the R-script.
 - The script 'KPMP_atlas_v2_calculate_degs_and_pathways.R' was only tested in a LINUX environment.
 - The script 'Generate_pathwaySubtype_networks' can only be run in a Windows environment using Visual Studio.
-
+- All code was written by Jens Hansen, working for the Ravi Iyengar lab and the Kidney Precision Medicine Project.
 
 
 
