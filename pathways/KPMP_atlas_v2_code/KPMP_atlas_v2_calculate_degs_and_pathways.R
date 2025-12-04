@@ -152,7 +152,7 @@ unregister <- function() {
      is_windows = FALSE #Script was only tested and DEGs were only calculated in a LINUX environment
      is_linux = !is_windows
      if (calculateFinalDegs1_doPostHocPower2==1)
-     { max_cores_count = 38 }  ############## update (for regular analysis, we suggest less cores, since there are only 25 tasks and uploading data into the cores takes some time as well)
+     { max_cores_count = 38 }  #(for regular analysis, we suggest less cores, since there are only 25 tasks and uploading data into the cores takes some time as well)
      if (calculateFinalDegs1_doPostHocPower2==2)
      { max_cores_count = 38; }
      tmp_directory = "/data/tmp/"
@@ -167,7 +167,7 @@ unregister <- function() {
      name_of_this_script = "KPMP_atlas_v2_calculate_degs_and_pathways.R"
      working_directory = "/data/KPMP_v2_atlas/KPMP_atlas_v2_code/"; #has to contain the script 'KPMP_atlas_v2_shared_code.R'
      ##download the KPMP v2 atlas Seurat object and copy it into the 'SN_RNAseq_atlas_v2_2024November01' subdirectory as specified in 'Information about necessary directories and files' below
-     ##adjust file name of and read function for the seurat object in 'read_sn_rnaSeq'
+     ##adjust file name of and read function for the downloadable h5ad file in 'read_sn_rnaSeq'
      
      ##ensure that the user has read and write rights in directories
      ##Please also see Set parameter for PostHocPower analysis (if calculateFinalDegs1_doPostHocPower2==2) to adjust parameters to available memory on used computer
@@ -287,17 +287,17 @@ unregister <- function() {
 
   if (calculateFinalDegs1_doPostHocPower2==1)
   {#Begin - Set parameter for final analysis
-     finalAnalysis_numberOfDatasets = 25   ############## update
+     finalAnalysis_numberOfDatasets = 25   
      postHocPower_max_degListsCombinations = 0#100 #if set to zero postHocPower will be skipped
      postHocPower_minPercent_randomSeedNos = 1
      postHocPower_max_number_of_datasets = 0#100 #if set to zero postHocPower will be skipped
-     random_seed_nos = 1:finalAnalysis_numberOfDatasets# 10000   ############## update
+     random_seed_nos = 1:finalAnalysis_numberOfDatasets
      randomSeedNodeNoPostHocPower = -1
      maxNoDegListsInMem = 5000; #See explanation below
   }#End - Set parameter for final analysis
   if (calculateFinalDegs1_doPostHocPower2==2)
   {#Begin - Set parameter for PostHocPower analysis
-     finalAnalysis_numberOfDatasets = 25   ############## update
+     finalAnalysis_numberOfDatasets = 25  
      postHocPower_max_degListsCombinations = 100 #if set to zero postHocPower will be skipped
      postHocPower_minPercent_randomSeedNos = 1
      postHocPower_max_number_of_datasets = 100 #if set to zero postHocPower will be skipped
@@ -327,7 +327,7 @@ unregister <- function() {
   
   ontologies = c("Mbco")#,"Go_bp","Reactome") #"Mbco","Go_bp","Go_mf","Go_cc","Reactome","Custom_1","Custom_2"
 
-  cellTypeGroup_cellTypes_list = list()   ############## update
+  cellTypeGroup_cellTypes_list = list()   
   cellTypeGroup_cellTypes_list[["PT"]] = "PT"
   cellTypeGroup_cellTypes_list[["TAL"]] = c("TAL")
   cellTypeGroup_cellTypes_list[["PODPEC"]] = c("PEC","POD")
@@ -400,13 +400,14 @@ unregister <- function() {
 
 if (read_sn_rnaSeq_altlas_v2_2024November)
 {#Begin - read_sn_rnaSeq
+  #Adjust read functions to convert/read the downloadable f337b525-c8f7-4c96-8cfe-f258a9f5ca48.h5ad file
   print(paste("Read SNRNAseq/Multiome seurat object",sep=''))
   directory = paste(base_directory,"/SN_RNAseq_atlas_v2_2024November01/",sep='');
   destDirectory = paste(directory,"full_kidney_count_set_0424/",sep='')
   study_baseName = "SN RNAseq atlas v2 2024November01"
-  seurat_object_fileName = "Kidney_AtlasV2_Seurat_11012024.rds" #f337b525-c8f7-4c96-8cfe-f258a9f5ca48
+  seurat_object_fileName = "Kidney_AtlasV2_Seurat_11012024.rds" #f337b525-c8f7-4c96-8cfe-f258a9f5ca48.h5ad
   complete_seurat_object_fileName = paste(directory,seurat_object_fileName,sep='')
-  seurat_object_all_assays = LoadSeuratRds(complete_seurat_object_fileName)
+  seurat_object_all_assays = LoadSeuratRds(complete_seurat_object_fileName) 
   
   counts_matrix = open_matrix_dir(dir = destDirectory)
   #counts_matrix <- Azimuth:::ConvertEnsembleToSymbol(mat = counts_matrix, species = "human")
