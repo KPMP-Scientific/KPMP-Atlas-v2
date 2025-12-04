@@ -20,7 +20,6 @@
 - The script 'KPMP_atlas_v2_calculate_degs_and_pathways.R' was only tested in a LINUX environment, using R Studio.
 - The script 'Generate_pathwaySubtype_networks' can only be run in a Windows environment using Visual Studio.
 - The script 'Whole_cell_functions_in_cellTypes.R' was only tested in a Windows environment, using R Studio.
-- All code was written by Jens Hansen, working for the Ravi Iyengar lab and the Kidney Precision Medicine Project.
 
 
 
