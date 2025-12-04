@@ -165,7 +165,7 @@ unregister <- function() {
      #mbc_pathNet_directory = "D:/MBCO_windows_application/"
      directory_of_this_script = "/data/KPMP_disease_atlas/KPMP_atlas_v2_code/";
      name_of_this_script = "KPMP_atlas_v2_calculate_degs_and_pathways.R"
-     working_directory = "/data/KPMP_disease_atlas/KPMP_atlas_v2_code/"; #has to contain the script 'KPMP_atlas_v2_shared_code.R'
+     working_directory = "/data/KPMP_v2_atlas/KPMP_atlas_v2_code/"; #has to contain the script 'KPMP_atlas_v2_shared_code.R'
      ##download the KPMP v2 atlas Seurat object and copy it into the 'SN_RNAseq_atlas_v2_2024November01' subdirectory as specified in 'Information about necessary directories and files' below
      ##adjust file name of and read function for the seurat object in 'read_sn_rnaSeq'
      
