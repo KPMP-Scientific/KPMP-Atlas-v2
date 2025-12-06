@@ -148,7 +148,7 @@ unregister <- function() {
   }#End - Open libraries and document versions
   
   {#Begin- User input is needed here
-     calculateFinalDegs1_doPostHocPower2 = 2 #if run in PostHocPower mode the results will be saved in a directory ending with PHP (as specified with the variable 'add_to_results_directory')
+     calculateFinalDegs1_doPostHocPower2 = 1 #if run in PostHocPower mode the results will be saved in a directory ending with PHP (as specified with the variable 'add_to_results_directory')
      is_windows = FALSE #Script was only tested and DEGs were only calculated in a LINUX environment
      is_linux = !is_windows
      if (calculateFinalDegs1_doPostHocPower2==1)
