@@ -188,11 +188,11 @@ dev.off()
 
 TFs.plot <- c("ATF3",
               "IRF1","REL",
-              "TCF4","SMAD3","RUNX1","PLAGL1","EGR3",
+              "TCF4","SOX9","SOX4","SMAD3","RUNX1","PLAGL1","EGR3",
               "KLF4","GLI1",
               "MEF2C")
 
-pdf(file='trajectories/FIB-Lineages_TFBS_Dotplot_subclassl3_subset.pdf',width=5.7,height=3.5)
+pdf(file='trajectories/FIB-Lineages_TFBS_Dotplot_subclassl3_subset.pdf',width=6.2,height=3.5)
 DotPlot(KB.STR, features = TFs.plot, dot.scale = 6, col.min = 0, cols = c("lightgrey","darkred")) + RotatedAxis()
 dev.off()
 
