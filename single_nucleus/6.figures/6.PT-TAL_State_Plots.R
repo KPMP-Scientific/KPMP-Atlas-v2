@@ -180,11 +180,11 @@ pdf(file='trajectories/PT-Lineages_TFBS_Dotplot_subclassl3.pdf',width=6.5,height
 DotPlot(KB.PT, features = TFs.plot, dot.scale = 6, col.min = 0, cols = c("lightgrey","darkred")) + RotatedAxis()
 dev.off()
 
-TFs.plot <- c("REL","KLF6","SOX9",
+TFs.plot <- c("REL","KLF6","SOX4","SOX9",
               "MEIS1","NR2F1",
               "HNF4A","RXRA")
 
-pdf(file='trajectories/PT-Lineages_TFBS_Dotplot_subclassl3_subset.pdf',width=4.7,height=4)
+pdf(file='trajectories/PT-Lineages_TFBS_Dotplot_subclassl3_subset.pdf',width=4.9,height=4)
 DotPlot(KB.PT, features = TFs.plot, dot.scale = 6, col.min = 0, cols = c("lightgrey","darkred")) + RotatedAxis()
 dev.off()
 
@@ -349,12 +349,9 @@ pdf(file='trajectories/TAL-Lineages_TFBS_Dotplot_subclassl3.pdf',width=6.5,heigh
 DotPlot(KB.DT, features = TFs.plot, dot.scale = 6, col.min = 0, cols = c("lightgrey","darkred")) + RotatedAxis()
 dev.off()
 
-TFs.plot <- c("FOS","TFAP2B","SOX9","ELF3",
-              
-              "NFIA",
-              "ESRRB","NR2F2")
+TFs.plot <- c("FOS","TFAP2B","SOX4","SOX9","ELF3","NFIA","ESRRB","NR2F2")
 
-pdf(file='trajectories/TAL-Lineages_TFBS_Dotplot_subclassl3_subset.pdf',width=4.7,height=3.2)
+pdf(file='trajectories/TAL-Lineages_TFBS_Dotplot_subclassl3_subset.pdf',width=4.9,height=3.2)
 DotPlot(KB.DT, features = TFs.plot, dot.scale = 6, col.min = 0, cols = c("lightgrey","darkred")) + RotatedAxis()
 dev.off()
 
