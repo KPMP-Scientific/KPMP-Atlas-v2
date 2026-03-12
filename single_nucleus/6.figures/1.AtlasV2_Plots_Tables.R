@@ -135,6 +135,7 @@ DimPlot(KB, reduction = "umap", label = TRUE, raster=FALSE,alpha = 0.1,
         ) + guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)))
 dev.off()
 
+#HKAv1 subclass level 3
 Idents(object = KB) <- "v1.subclass.l3"
 pdf(file='UMAP_Plots/10X_snCv3_v1_Subclass.l3_umap.pdf',width=10,height=8)
 DimPlot(KB, reduction = "umap", label = TRUE, raster=FALSE,alpha = 0.1,
@@ -142,6 +143,32 @@ DimPlot(KB, reduction = "umap", label = TRUE, raster=FALSE,alpha = 0.1,
         ) + NoLegend() + scale_color_manual(values = sc.l3.cols[levels(Idents(KB))], name = "Subclass"
         ) + guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)))
 dev.off()
+
+pdf(file='UMAP_Plots/10X_snCv3_v1_Subclass.l3_umap_B.pdf',width=10,height=8)
+KB$temp_ident <- as.character(Idents(KB))
+KB$temp_ident[is.na(KB$temp_ident)] <- "NA_cells"
+Idents(KB) <- KB$temp_ident
+
+# Define colors including one for NA
+my_colors <- sc.l3.cols[levels(Idents(KB))]
+my_colors["NA_cells"] <- "grey90"
+
+DimPlot(KB, 
+        reduction = "umap", 
+        label = FALSE, 
+        raster = FALSE,
+        alpha = 0.1,
+        label.size = 4, 
+        repel = TRUE,
+        order = setdiff(levels(Idents(KB)), "NA_cells")  # Plot NA_cells first
+) + 
+  ggtitle("Subclass.l3") + 
+  NoLegend() + 
+  scale_color_manual(values = my_colors, name = "Subclass") + 
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2)))
+dev.off()
+
+
 
 #Subclass level 1
 Idents(object = KB) <- "v2.subclass.l1"
