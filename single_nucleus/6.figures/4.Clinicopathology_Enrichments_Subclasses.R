@@ -58,6 +58,7 @@ adj.cond.AKI.HCKD.pVal <- readRDS("Adj-Condition_AKI-H-CKD_Group_composition_V2_
 
 eGFR.pVal <- readRDS("eGFR_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 age.pVal <- readRDS("HRT_Age_Group_composition_V2_Subclassl3_P-Values.RDS")
+Sex.pVal <- readRDS("Sex_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
 IF.pVal <- readRDS("Interstitial-Fibrosis_Group_composition_V2_Subclassl3_P-Values.RDS")
 TA.pVal <- readRDS("Tubular-Atrophy_Group_composition_V2_Subclassl3_P-Values.RDS")
 TI.pVal <- readRDS("Tubular-Injury_Group_composition_V2_Subclassl3_P-Values.RDS")
@@ -75,13 +76,15 @@ row.order <- gsub(" ","",row.order)
 
 p.table <- do.call(cbind, mget(ls(pattern = "\\.pVal")))
 t.stats <- p.table[row.order,grep(".t", colnames(p.table))]
-write.table(p.table[row.order,], file = "QC_Plots/Composition_Analysis_p-Values_addit_Adj_Groups_biopsy.txt", sep = "\t", quote = FALSE)
+write.table(p.table[row.order,], file = "QC_Plots/Composition_Analysis_p-Values_addit_Adj_Groups_biopsy_B.txt", sep = "\t", quote = FALSE)
+
+
 
 ###Clinical Phenotype Plots
 col.order <- c("cond.ref.aki.pVal",
                "cond.aki.ckd.pVal",
                "cond.ref.ckd.pVal",
-               "eGFR.pVal", "age.pVal")
+               "eGFR.pVal", "age.pVal","Sex.pVal")
 p.stats <- p.table[row.order,paste0(col.order,".p")]
 
 states <- setNames(KB$v2.state.l2,KB$v2.subclass.l3)[order]
@@ -103,6 +106,9 @@ heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal
           cellnote = ifelse(as.matrix(t(p.stats)) < 0.05, "*", ""),
           notecol = 'black', notecex = 2)
 dev.off() 
+
+
+
 
 #additional adjudication categories
 col.order <- c("adj.cond.ref.aki.pVal","cond.ref.ati.pVal","cond.ref.ain.pVal",
@@ -148,6 +154,7 @@ heatmap.2(as.matrix(t(t.stats[row.order,paste0(col.order,".t")])),col=brewer.pal
           cellnote = ifelse(as.matrix(t(p.stats)) < 0.05, "*", ""),
           notecol = 'black', notecex = 2)
 dev.off() 
+
 
 
 
