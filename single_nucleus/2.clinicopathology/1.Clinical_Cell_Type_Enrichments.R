@@ -715,6 +715,99 @@ saveRDS(p.table, file = "HRT_Age_Group_composition_V2_Subclassl3_P-Values.RDS")
 
 
 
+###Cell type proportions for sex groups
+KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
+KB <- subset(KB, tissue_type %in% "Biopsy")
+KB <- subset(KB, condition_level1 %in% c("HRT","AKI","CKD"))
+
+#update metadata
+meta <- KB@meta.data
+head(meta)
+
+exp.meta <- read.delim("HKAv2_Experimental_Metadata_12032025.txt")
+emc <- c("source","assay","experiment","patient","specimen",
+         "condition_level3","condition_level2","condition_level1","condition",
+         "percent_cortex","percent_medulla","region_level3","region_level2",
+         "region_level1","age_binned","sex","race","KDIGO_stage",
+         "baseline_eGFR_binned","proteinuria_binned","A1c_binned","albuminuria_binned",
+         "diabetes_history","diabetes_duration","hypertension_history","hypertension_duration",
+         "on_RAAS_blockade","ckd_stageC","location","laterality","protocol",
+         "tissue_type_full","tissue_type")
+
+for(i in 1:length(emc)){
+  meta[[emc[i]]] <- exp.meta[,emc[i]][match(meta$library, exp.meta$library)]
+}
+
+meta <- meta[,c("library","nCount_RNA","nFeature_RNA","percent.er","percent.mt","source","assay","experiment","patient","specimen",
+                "condition_level3","condition_level2","condition_level1","condition",
+                "percent_cortex","percent_medulla","region_level3","region_level2",
+                "region_level1","age_binned","sex","race","KDIGO_stage",
+                "baseline_eGFR_binned","proteinuria_binned","A1c_binned","albuminuria_binned",
+                "diabetes_history","diabetes_duration","hypertension_history","hypertension_duration",
+                "on_RAAS_blockade","ckd_stageC","location","laterality","protocol",
+                "tissue_type_full","tissue_type","v2.clusters","v2.subclass.full","v2.subclass.l3",
+                "v2.subclass.l2","v2.subclass.l1","v2.state.l2","v2.state.l1",
+                "v2.class","v2.structure")]
+
+KB@meta.data <- meta
+
+
+KB <- subset(KB, sex %in% c("Female","Male"))
+
+
+#sample info
+Ref <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "HRT",]$patient)) 
+AKI <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "AKI",]$patient))
+CKD <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "CKD",]$patient))
+DMR <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "DM-R",]$patient))
+NHT <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "NHT",]$patient))
+RT.UCS <- length(unique(KB@meta.data[KB@meta.data$condition_level1 == "RT-UCS",]$patient))
+Female <- length(unique(KB@meta.data[KB@meta.data$sex == "Female",]$patient))
+Male <- length(unique(KB@meta.data[KB@meta.data$sex == "Male",]$patient))
+#HRT      41
+#AKI      38
+#CKD      73
+#DMR      0
+#NHT       0
+#RT.UCS    0
+#Female    66  
+#Male      86
+        
+
+##Differential composition analysis - Cluster level
+df_comp <- as.data.frame.matrix(table(KB$patient, KB$v2.subclass.l3))
+select.donors <- rownames(df_comp)[rowSums(df_comp) > 50]
+df_comp <- df_comp[select.donors, ]
+df_comp_relative <- sweep(x = df_comp, MARGIN = 1, STATS = rowSums(df_comp), FUN = "/")
+
+df_cond <- as.data.frame.matrix(table(KB$patient, KB$sex))[select.donors, ]
+
+df_comp_relative$cond <- "Female"
+df_comp_relative$cond[df_cond$'Male' != 0] <- "Male"
+colnames(df_comp_relative) <- gsub("-","",colnames(df_comp_relative))
+colnames(df_comp_relative) <- gsub(" ","",colnames(df_comp_relative))
+saveRDS(df_comp_relative, file = "Sex_Group_composition_V2_Subclassl3_biopsy.RDS")
+
+clusters <- colnames(df_comp_relative)[!colnames(df_comp_relative) %in% "cond"]
+
+#T-Tests
+x <- "Female"
+y <- "Male"
+
+p.table <- do.call(rbind, lapply(clusters, function(ct) {
+  print(paste("Running for Cluster:", ct))
+  data.x <- df_comp_relative[df_comp_relative$cond %in% x,ct]
+  data.y <- df_comp_relative[df_comp_relative$cond %in% y,ct]
+  p <- t.test(x = data.x, y = data.y, alternative = c("two.sided", "less", "greater"), mu = 0, 
+              paired = FALSE, var.equal = FALSE, conf.level = 0.95)
+  p.df <- data.frame(p = p$p.value, t = p$statistic)
+  p.df
+}))
+
+rownames(p.table) <- clusters
+saveRDS(p.table, file = "Sex_Group_composition_V2_Subclassl3_P-Values_biopsy.RDS")
+
+
 
 
 
