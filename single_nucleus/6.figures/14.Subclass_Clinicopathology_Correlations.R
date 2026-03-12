@@ -17,60 +17,10 @@ setwd("~/Projects/Human_Kidney/Atlas_V2")
 options(Seurat.object.assay.version = "v5")
 
 ###Pathology score groupings - Interstitial fibrosis groups
-KB <- readRDS("~/hsKidAt/blake_LTS/Atlas_V2/scratch/Kidney_AtlasV2_Seurat_11012024.rds")
-KB <- UpdateSeuratObject(KB)
+KB <- readRDS("~/datasets/altos-lab-restricted-project-kpmp/blake_LTS/Atlas_V2/scratch/HKAv2_Seurat_01162026.rds")
 KB <- subset(KB, tissue_type %in% "Biopsy")
 KB <- subset(KB, condition_level1 %in% c("HRT","AKI","CKD"))
 KB
-
-#update metadata
-meta <- KB@meta.data
-head(meta)
-
-exp.meta <- read.delim("HKAv2_Experimental_Metadata_12032025.txt")
-emc <- c("source","assay","experiment","patient","specimen",
-         "condition_level3","condition_level2","condition_level1","condition",
-         "percent_cortex","percent_medulla","region_level3","region_level2",
-         "region_level1","age_binned","sex","race","KDIGO_stage",
-         "baseline_eGFR_binned","proteinuria_binned","A1c_binned","albuminuria_binned",
-         "diabetes_history","diabetes_duration","hypertension_history","hypertension_duration",
-         "on_RAAS_blockade","ckd_stageC","location","laterality","protocol",
-         "tissue_type_full","tissue_type")
-
-for(i in 1:length(emc)){
-  meta[[emc[i]]] <- exp.meta[,emc[i]][match(meta$library, exp.meta$library)]
-}
-
-KB@meta.data <- meta
-
-
-#Update annotations
-meta <- KB@meta.data
-cl.meta <- read.csv("HKAv2_Cluster_Metadata_09232025.csv")
-emc <- c("v2.subclass.full","v2.subclass.l3","v2.subclass.l2","v2.subclass.l1","v2.state.l2","v2.state.l1","v2.class","v2.structure")
-for(i in 1:length(emc)){
-  meta[[emc[i]]] <- cl.meta[,emc[i]][match(meta$v2.clusters, cl.meta$v2.clusters)]
-}
-colnames(meta)
-
-meta <- meta[,c("library","nCount_RNA","nFeature_RNA","percent.er","percent.mt","source","assay","experiment","patient","specimen",
-                "condition_level3","condition_level2","condition_level1","condition",
-                "percent_cortex","percent_medulla","region_level3","region_level2",
-                "region_level1","age_binned","sex","race","KDIGO_stage",
-                "baseline_eGFR_binned","proteinuria_binned","A1c_binned","albuminuria_binned",
-                "diabetes_history","diabetes_duration","hypertension_history","hypertension_duration",
-                "on_RAAS_blockade","ckd_stageC","location","laterality","protocol",
-                "tissue_type_full","tissue_type","v2.clusters","v2.subclass.full","v2.subclass.l3",
-                "v2.subclass.l2","v2.subclass.l1","v2.state.l2","v2.state.l1",
-                "v2.class","v2.structure")]
-
-KB@meta.data <- meta
-
-#Fix problem characters
-unique(KB@meta.data$region_level3)
-KB@meta.data[KB@meta.data$region_level3 %in% '\xca',]$region_level3 <- ""
-unique(KB@meta.data$region_level3)
-
 
 #Add pathology Scores
 path.meta <- read.delim("KPMP_TIV_Descriptor_Scores_8-29-2024_subset.txt")
