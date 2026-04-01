@@ -1,0 +1,620 @@
+% /Applications/MATLAB_R2019a.app/bin/matlab -batch Demo_main
+
+clear
+close all hidden
+clc
+warning('off','all')
+
+%filter out samples with too few cells in this analysis
+Sample_meta=readtable('aPT_PT_pseudobulk/Samples_Conditions_and_cell_numbers.csv');
+index=find(Sample_meta.Cells>200);
+Sample_meta=Sample_meta(index,:);
+
+%load peaks called from all cell types
+[Peak_ID, Peaks(:,1), Peaks(:,2), Peaks(:,3)]=textread('V2_peaks.csv', '%s %d %d %d', 'headerlines', 1, 'delimiter', ',');    
+TF_binding=load('V2_Peak_Motifs_mapping.mat');
+
+
+fprintf('load scATAC differential statistics from R output\n\n')
+% select significant peaks and genes for all selected clusters
+Peak_sc_diff_all = readtable('aPT_PT_pseudobulk/All_samples_aPT_PT_cluster_markers_ATAC.csv');
+DA_peak_sc_index=find(abs(Peak_sc_diff_all.avg_log2FC)>0.3 & Peak_sc_diff_all.p_val_adj<0.05 & (Peak_sc_diff_all.pct_1>0.1 | Peak_sc_diff_all.pct_2>0.1));
+Peak_sc_diff_all = Peak_sc_diff_all(DA_peak_sc_index,:);
+
+
+fprintf('load scRNA differential statistics from R output\n\n')
+RNA_sc_diff_all = readtable('aPT_PT_pseudobulk/All_samples_aPT_PT_cluster_markers_RNA.csv');
+DE_gene_sc_index=find(abs(RNA_sc_diff_all.avg_log2FC)>0.5 & RNA_sc_diff_all.p_val_adj<0.05 & max([RNA_sc_diff_all.pct_1, RNA_sc_diff_all.pct_2], [], 2)>0.1);
+RNA_sc_diff_all = RNA_sc_diff_all(DE_gene_sc_index,:);
+
+%RNA differential calling is wrong as there is no data normalization
+%performed and not in log2 space
+
+Candidate_clusters=intersect(unique(Peak_sc_diff_all.cluster), unique(RNA_sc_diff_all.cluster));
+for p=1:length(Candidate_clusters)
+    peak_index=find(strcmp(Peak_sc_diff_all.cluster, Candidate_clusters{p})>0);
+    Peak_sc_diff{p}=Peak_sc_diff_all(peak_index,:);
+    Peak_diff_ID{p}=Peak_sc_diff{p}.gene;
+    fprintf(2, '%d DA peaks from single cell differential analysis of cluster %s\n\n', length(Peak_diff_ID{p}), Candidate_clusters{p})
+
+
+    RNA_index=find(strcmp(RNA_sc_diff_all.cluster, Candidate_clusters{p})>0);
+    RNA_sc_diff{p}=RNA_sc_diff_all(RNA_index,:);
+    Gene_diff_symbol{p}=RNA_sc_diff{p}.gene;
+    fprintf(2, '%d DE genes from single cell differential analysis of cluser %s\n\n', length(Gene_diff_symbol{p}), Candidate_clusters{p})
+end
+
+
+
+%% load ATAC and RNA pseudo bulk data from all clusters since we will regress the whole trajectory now
+for p=1:length(Candidate_clusters) 
+    ATAC = readtable(['aPT_PT_pseudobulk/Pseudo_bulk_aPT_PT_ATAC_count_',Candidate_clusters{p},'_all_samples.txt'], 'ReadVariableNames',true);
+    ATAC_samples = ATAC.Properties.VariableDescriptions(2:end);
+    ATAC_count = sparse(ATAC{:,2:end});
+    [ATAC_samples, sample_index] = intersect(ATAC_samples, Sample_meta.Samples);
+    ATAC_count = ATAC_count(:,sample_index);
+
+
+    RNA = readtable(['aPT_PT_pseudobulk/Pseudo_bulk_aPT_PT_RNA_count_',Candidate_clusters{p},'_all_samples.txt'], 'ReadVariableNames',true);
+    RNA_symbols = RNA.Var1;
+    RNA_samples = RNA.Properties.VariableDescriptions(2:end);
+    RNA_count = sparse(RNA{:,2:end});
+    [RNA_samples, sample_index] = intersect(RNA_samples, Sample_meta.Samples);
+    RNA_count = RNA_count(:,sample_index);
+
+    if p==1
+        ATAC_samples_whole = insertBefore(ATAC_samples, 1, [Candidate_clusters{p},'_']);
+        ATAC_count_whole = ATAC_count;
+
+        RNA_samples_whole = insertBefore(RNA_samples, 1, [Candidate_clusters{p},'_']);
+        RNA_count_whole = RNA_count;
+    else
+        ATAC_samples_whole = [ATAC_samples_whole;insertBefore(ATAC_samples, 1, [Candidate_clusters{p},'_'])];
+        ATAC_count_whole = [ATAC_count_whole,ATAC_count];
+
+        RNA_samples_whole = [RNA_samples_whole;insertBefore(RNA_samples, 1, [Candidate_clusters{p},'_'])];
+        RNA_count_whole = [RNA_count_whole,RNA_count];
+    end
+end
+
+
+total_ATAC_reads=5e6;
+ATAC_raw_count_sum=sum(ATAC_count_whole)+1;
+for s=1:size(ATAC_count_whole,2)
+    ATAC_count_whole(:,s)=ATAC_count_whole(:,s)*(total_ATAC_reads/ATAC_raw_count_sum(s));
+end
+
+ATAC_count_whole_flag=ATAC_count_whole~=0;
+ATAC_sample_index=find(sum(ATAC_count_whole_flag)/size(ATAC_count_whole_flag,1)>0.05);
+ATAC_samples_whole=ATAC_samples_whole(ATAC_sample_index);
+ATAC_count_whole=ATAC_count_whole(:,ATAC_sample_index);
+
+
+
+total_RNA_reads=5e6;
+RNA_raw_count_sum=sum(RNA_count_whole)+1;
+for s=1:size(RNA_count,2)
+    RNA_count_whole(:,s)=RNA_count_whole(:,s)*(total_RNA_reads/RNA_raw_count_sum(s));
+end
+
+RNA_count_whole_flag=RNA_count_whole~=0;
+RNA_sample_index=find(sum(RNA_count_whole_flag)/size(RNA_count_whole_flag,1)>0.05);
+RNA_samples_whole=RNA_samples_whole(RNA_sample_index);
+RNA_count_whole=RNA_count_whole(:,RNA_sample_index);
+
+[Common_samples, bidex, cidex]=intersect(ATAC_samples_whole, RNA_samples_whole);
+ATAC_count_whole=ATAC_count_whole(:,bidex);
+RNA_count_whole=RNA_count_whole(:,cidex);
+
+%% MAGICAl analysis
+TF_flag=zeros(1,870);
+for p=1:length(Candidate_clusters)
+    p
+    Candidate_Gene_Symbol = Gene_diff_symbol{p};
+    Candidate_Peak_ID = Peak_diff_ID{p};
+    
+
+    %Enrichment analysis on differential peaks (with active peaks as background), to select candidate TFs regulating these peaks
+    fprintf('Select candidate TFs that are enriched in differential peaks, with active peaks as background\n\n')
+    [Candidate_Peak_ID, bidex]=intersect(TF_binding.Peak_ID, Candidate_Peak_ID);
+    Motif_diff_peak_binding=TF_binding.Peak_motif_mapping(bidex,:);
+
+    TF_pct(p,:)=sum(Motif_diff_peak_binding)/length(Candidate_Peak_ID);
+    TF_background_pct=sum(TF_binding.Peak_motif_mapping)/length(TF_binding.Peak_ID);
+    TF_enrichment_FC(p,:)=TF_pct(p,:)./TF_background_pct;
+    TF_index=find(TF_pct(p,:)>0.10 & log2(TF_enrichment_FC(p,:))>1);
+    TF_flag(p, TF_index)=1;
+
+    if ~isempty(TF_index)
+        Candidate_TFs=TF_binding.Motifs(TF_index);
+        Candidate_TF_Peak_Binding=Motif_diff_peak_binding(:,TF_index);
+        Binding_peak_index=find(sum(Candidate_TF_Peak_Binding, 2)>0);
+        Candidate_Peak_ID=Candidate_Peak_ID(Binding_peak_index);
+        Candidate_TF_Peak_Binding=Candidate_TF_Peak_Binding(Binding_peak_index,:);
+
+        [Candidate_Peak_ID,bidex,cidex]=intersect(Candidate_Peak_ID, Peak_ID, 'stable');
+        Candidate_TF_Peak_Binding=Candidate_TF_Peak_Binding(bidex,:);
+        Candidate_Peaks=Peaks(cidex,:);
+        fprintf(2, '%d enriched TFs\n\n', length(Candidate_TFs))
+    else
+        fprintf('Too few peaks with TF binding sites.\nMAGICAL not applicable to this cell type!\n\n\n\n')
+        %         continue;
+    end
+
+    %% MAGICAL integration
+    fprintf('MAGICAL integration starts!\n\n')
+    %     MAGICAL_post=MAGICAL_V1(Candidate_Peak_ID, Candidate_Peaks, ATAC, Candidate_Gene_Symbol, RNA, Candidate_TFs, Candidate_TF_Peak_Binding, Sample_meta);
+    %************************* Input data *********************
+    % Candidate_Peak_ID: P x 1 string vector
+    % Candidate_Peaks: P x 3 matrix with chr, point1, point2
+    % ATAC: P x S matrix, raw pseudo bulk ATAC count for all peaks and S samples
+    % Candidate_Gene_Symbol: G x 1 string vector with gene names
+    % RNA: G x S matrix, raw pseudo bulk RNA count for all genes and S samples
+    % Candidate_TFs: T x 1 string vector for enriched TFs
+    % Candidate_TF_Peak_Binding: P x T binary matrix, binding state for P peaks and T TFs
+
+    %********** Initial Integration to select TFs, peaks and genes ***********
+    [Candidate_TFs, Candidate_TF_log2Count,...
+        Candidate_Peak_ID, Candidate_Peaks, Candidate_Peak_log2Count,...
+        Candidate_Gene_Symbol, Candidate_Gene_TSS, Candidate_Gene_log2Count,...
+        Candidate_TF_Peak_Binding, Candidate_Peak_Gene_looping, Selected_samples]= Initial_integration(Candidate_Peak_ID, Candidate_Peaks, Peak_ID, ATAC_count_whole,...
+        Candidate_Gene_Symbol, RNA_symbols,  RNA_count_whole, Candidate_TFs, Candidate_TF_Peak_Binding, Common_samples);
+
+    S=length(Selected_samples);
+    T=length(Candidate_TFs);
+    F=length(Candidate_Peaks);
+    G=length(Candidate_Gene_Symbol);
+
+    fprintf(2, 'Initial integration associated %d TFs, %d DA peaks, and %d DE genes together\n\n', T, F, G)
+
+    %********** Model variable prior calculation *****************************
+    %Note: in MCMC, initial values may not be that important, but using more
+    %importantive prior could speed up the sampling convergence
+
+    fprintf('MAGICAL model initialization\n\n')
+
+    [P_prior, P_mean, P_var, B_prior, B_mean, B_var, B_prob, L_prior, L_mean, L_var, L_prob]=...
+        MAGICAL_prior(Candidate_TF_log2Count,Candidate_Peak_log2Count,Candidate_Gene_log2Count,Candidate_TF_Peak_Binding, Candidate_Peak_Gene_looping, S, T, F, G);
+
+    MAGICAL_post(p).TFs=Candidate_TFs;
+    MAGICAL_post(p).Peak_ID=Candidate_Peak_ID;
+    MAGICAL_post(p).Peaks=Candidate_Peaks;
+    MAGICAL_post(p).Genes=Candidate_Gene_Symbol;
+    MAGICAL_post(p).Gene_TSS=Candidate_Gene_TSS;
+    MAGICAL_post(p).TF_Peak_Binding_weight=B_prior;
+    MAGICAL_post(p).TF_Peak_Binding_prob=B_prob;
+    MAGICAL_post(p).Peak_Gene_Looping_weight=L_prior;
+    MAGICAL_post(p).Peak_Gene_Looping_prob=L_prob;
+
+    %********** Initial round of sampling, using their prior values **********
+
+    A=Candidate_Peak_log2Count;
+    R=Candidate_Gene_log2Count;
+
+    P=P_prior;
+    B=B_prior;
+    L=L_prior;
+
+    B_state=full(Candidate_TF_Peak_Binding);
+    L_state=full(Candidate_Peak_Gene_looping);
+
+    B_state_frq=full(Candidate_TF_Peak_Binding);
+    L_state_frq=full(Candidate_Peak_Gene_looping);
+
+    alpha_A=1;
+    beta_A=1;
+    ATAC_fitting_residue=A-B*P;
+    sigma_A_noise=var(ATAC_fitting_residue(:));
+
+    % RNA_fitting_residue=R-L'*(B*P);
+    % sigma_R_noise=var(RNA_fitting_residue(:));
+    alpha_R=1;
+    beta_R=1;
+    RNA_fitting_residue=R-L'*A;
+    sigma_R_noise=var(RNA_fitting_residue(:));
+
+    %************************* MAGICAL sampling ******************************
+    iteration_num=10000;
+    iteration_seg=iteration_num/10;
+    for i=1:iteration_num
+
+        %********** scATAC-seq fitting and variable sampling  ****************
+
+        %Step 1: TF activity sampling
+        P = TF_activity_P_sampling(A, B, P, P_mean, P_var, sigma_A_noise);
+
+        %Step 2: TF-peak binding weight sampling
+        B = TF_peak_binding_B_sampling(A, B, P, B_state, B_mean, B_var, sigma_A_noise);
+
+        %Step 3: TF-peak binding state update
+        [B_state, B] = TF_peak_binary_binding_B_state_sampling(A, B, P, B_state, B_mean, B_var, B_prob, sigma_A_noise);
+
+        %Step 4: ATAC fitting residue variance control
+        ATAC_fitting_residue=A-B*P;
+        sigma_A_noise = 1/gamrnd(alpha_A+1/2,1/(beta_A+sum(sum(ATAC_fitting_residue.^2))/(2*F*S)));
+        %         sigma_A_noise = (beta_A+sum(sum(ATAC_fitting_residue.^2))/(2*F*S))/chi2rnd(2*alpha_A+1);
+        %         aa(i)=sigma_A_noise;
+
+        %********** scRNA-seq fitting and variable sampling  *****************
+        A_estimate=B*P;% or true A
+        %Step 5: Peak-Gene looping weight sampling
+        L = Peak_gene_looping_L_samping(R, L, A_estimate, L_state, L_mean, L_var, sigma_R_noise);
+
+        %Step 6: Peak-Gene looping state update
+        [L_state, L]=Peak_gene_binary_looping_L_state_samping(R, L, A_estimate, L_state, L_mean, L_var, L_prob, sigma_R_noise);
+
+        %Step 7: RNA fitting residue variance control
+        RNA_fitting_residue=R-L'*A_estimate;
+        sigma_R_noise = 1/gamrnd(alpha_R+1/2,1/(beta_R+sum(sum(RNA_fitting_residue.^2))/(2*G*S)));
+        %         sigma_R_noise = (beta_R+sum(sum(RNA_fitting_residue.^2))/(2*G*S))/chi2rnd(2*alpha_R+1);
+        %         bb(i) = sigma_R_noise;
+
+        %Step 8: Sample Summary
+        B_state_frq=B_state_frq+B_state;
+        L_state_frq=L_state_frq+L_state;
+
+        if mod(i,iteration_seg)==0
+            fprintf(2, 'MAGICAL finished %d percent\n\n', 10*i/iteration_seg)
+        end
+    end
+
+
+    % output posterior TFs, Peaks, Genes, TF-Peak binding and Peak-Gene looping
+
+    MAGICAL_post.TF_Peak_Binding_prob=B_state_frq/iteration_num;
+    MAGICAL_post.Peak_Gene_Looping_prob=L_state_frq/iteration_num;
+    fprintf('MAGICAL integrated %d peaks and %d genes together.\n\n', length(unique(xx)), length(unique(yy)))
+
+end
+
+save('aPT_PT_trajectory_MAGICAL.mat')
+
+load aPT_PT_trajectory_MAGICAL.mat
+
+CollecTRI_regulons=readtable('CollecTRI_regulons.txt', 'delimiter', ',');
+
+fid=fopen('V2_Kidney_aPT_PT_all_samples_trajectory_MAGICAL_circuits.txt', 'w');
+fprintf(fid, 'Cluster_ID\tGene_symbol\tGene_chr\tGene_TSS\tGene_pct_1\tGene_pct_2\tGene_sc_Log2FC\tGene_sc_p_val_adj\tPeak_ID\tPeak_pct_1\tPeak_pct_2\tPeak_sc_log2FC\tPeak_sc_p_val_adj\tATAC_RNA_looping_weight\tATAC_RNA_Bayesian_prob\tTFs\tCollecTRI_regulons\n');
+for p=1:length(Candidate_clusters)
+    p
+    [xx,yy]=find(MAGICAL_post(p).Peak_Gene_Looping_prob>0.95);
+    for i=1:length(xx)
+        Gene_index_1=find(strcmp(RNA_sc_diff{p}.gene, MAGICAL_post(p).Genes(yy(i)))>0);
+        Peak_index_1=find(strcmp(Peak_sc_diff{p}.gene, MAGICAL_post(p).Peak_ID(xx(i)))>0);
+
+        fprintf(fid, '%s\t%s\tchr%d\t%d\t%f\t%f\t%f\t%G\t%s\t%f\t%f\t%f\t%G\t%f\t%f\t', ...
+            Candidate_clusters{p},...
+            MAGICAL_post(p).Genes{yy(i)}, MAGICAL_post(p).Gene_TSS(yy(i), :),...
+            RNA_sc_diff{p}.pct_1(Gene_index_1(1)), RNA_sc_diff{p}.pct_2(Gene_index_1(1)),...
+            RNA_sc_diff{p}.avg_log2FC(Gene_index_1(1)), RNA_sc_diff{p}.p_val_adj(Gene_index_1(1)),...
+            MAGICAL_post(p).Peak_ID{xx(i)},...
+            Peak_sc_diff{p}.pct_1(Peak_index_1(1)), Peak_sc_diff{p}.pct_2(Peak_index_1(1)),...
+            Peak_sc_diff{p}.avg_log2FC(Peak_index_1(1)), Peak_sc_diff{p}.p_val(Peak_index_1(1)),...
+            full(MAGICAL_post(p).Peak_Gene_Looping_weight(xx(i),yy(i))),...
+            full(MAGICAL_post(p).Peak_Gene_Looping_prob(xx(i),yy(i))));
+
+        [TF_prob, TF_index]=sort(full(MAGICAL_post(p).TF_Peak_Binding_prob(xx(i),:)), 'descend');
+        for t=1:length(TF_index)
+            if TF_prob(t)>0.95
+                fprintf(fid, '%s (%f), ', MAGICAL_post(p).TFs{TF_index(t)}, MAGICAL_post(p).TF_Peak_Binding_weight(xx(i),TF_index(t)));
+            end
+        end
+        fprintf(fid, '\t');
+
+
+        target_index=find(strcmp(CollecTRI_regulons.target, MAGICAL_post(p).Genes{yy(i)})>0);
+        if ~isempty(target_index)
+            cn=0;
+            for t=1:length(TF_index)
+                if TF_prob(t)>0.95
+                    source_index=find(strcmp(CollecTRI_regulons.source(target_index), MAGICAL_post(p).TFs{TF_index(t)})>0);
+                    if ~isempty(source_index)
+                        cn=cn+1;
+                        fprintf(fid, '%s (%f), ', MAGICAL_post(p).TFs{TF_index(t)}, MAGICAL_post(p).TF_Peak_Binding_weight(xx(i),TF_index(t)));
+                    end
+                end
+            end
+
+            if cn==0
+                fprintf(fid, 'No TFs validated');
+            end
+
+        else
+            fprintf(fid, 'Gene not included');
+        end
+        fprintf(fid, '\n');
+    end
+end
+
+
+clear gene_list
+for p=1:14
+    gene_list{p}=RNA_sc_diff{p}.gene(RNA_sc_diff{p}.avg_log2FC>0);
+end
+
+index=find(MAGICAL_circuits.Gene_sc_Log2FC>0);
+MAGICAL_circuits=MAGICAL_circuits(index,:);
+
+clear gene_list validated_genes
+bb=0;
+for p=1:14
+    index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), Candidate_clusters{p})>0);
+    gene_list{p}=unique(MAGICAL_circuits.Gene_symbol(index));
+    aa=~cellfun(@isempty,string(MAGICAL_circuits.CollecTRI_regulons(index)));
+    mm=~strcmp(string(MAGICAL_circuits.CollecTRI_regulons(index)), "Gene not included");
+    validated_genes{p}=unique(MAGICAL_circuits.Gene_symbol(index(aa>0 & mm>0)));
+    bb(p,1)=length(gene_list{p});
+    bb(p,2)=length(validated_genes{p});
+    odds_ratio(p)=length(validated_genes{p})/length(gene_list{p})/(6564/36588);
+    [h,p_value(p,1)]=fishertest([length(validated_genes{p}),length(gene_list{p});6564,36588], 'tail', 'right');
+end
+
+validated_genes=gene_list;
+similarity_matrix=zeros(14,14);
+unique_matrix=zeros(14,1);
+for p=1:14
+    temp1=validated_genes{p};
+    for g=p:14
+        similarity_matrix(p,g)=length(intersect(validated_genes{p}, validated_genes{g}));
+        if p~=g
+            temp1=setdiff(temp1,validated_genes{g});
+        end
+    end
+    unique_matrix(p,1)=length(temp1);
+end
+
+
+%validated PT peaks
+CRE=readtable('CRE_Histone/CRE.csv');
+index=find(strcmp(CRE.celltype, 'PCT')>0 | strcmp(CRE.celltype, 'PST')>0 | strcmp(CRE.celltype, 'KIM1+ PT')>0);
+CRE_PT=CRE(index,:);
+
+CRE_flag=zeros(height(MAGICAL_circuits),2);
+for p=1:height(MAGICAL_circuits)
+    index1=find(strcmp(CRE_PT.peak_chr, MAGICAL_circuits.Peak_chr(p))>0);
+    index2=find(abs(CRE_PT.peak_point1(index1)+CRE_PT.peak_point2(index1)-MAGICAL_circuits.Peak_point1(p)-MAGICAL_circuits.Peak_point2(p))/2<500);
+    if ~isempty(index2)
+        CRE_flag(p,2)=1;
+    end
+
+    index3=find(strcmp(CRE_PT.gene, MAGICAL_circuits.Gene_symbol(p))>0);
+    if ~isempty(index3)
+        CRE_flag(p,1)=1;
+    end
+end
+
+
+
+
+[H3K27ac_peaks.chr, H3K27ac_peaks.point1, H3K27ac_peaks.point2, H3K27ac_peaks.peak_ID]=textread('Histone/GSE220230_Prim_H3K27ac_peaks.broadPeak', '%s %d %d %s');
+[H3K4me3_peaks.chr, H3K4me3_peaks.point1, H3K4me3_peaks.point2, H3K4me3_peaks.peak_ID]=textread('Histone/GSE220230_Prim_H3K4me3_peaks.broadPeak', '%s %d %d %s');
+
+H3K27ac_peaks_flag=zeros(height(MAGICAL_circuits),1);
+H3K4me3_peaks_flag=zeros(height(MAGICAL_circuits),1);
+
+for p=1:height(MAGICAL_circuits)
+    index1=find(strcmp(H3K27ac_peaks.chr, MAGICAL_circuits.Peak_chr(p))>0);
+    index2=find(abs(H3K27ac_peaks.point1(index1)+H3K27ac_peaks.point2(index1)-MAGICAL_circuits.Peak_point1(p)-MAGICAL_circuits.Peak_point2(p))/2<2000);
+    if ~isempty(index2)
+    H3K27ac_peaks_flag(p)=1;
+    end
+
+    index1=find(strcmp(H3K4me3_peaks.chr, MAGICAL_circuits.Peak_chr(p))>0);
+    index2=find(abs(H3K4me3_peaks.point1(index1)+H3K4me3_peaks.point2(index1)-MAGICAL_circuits.Peak_point1(p)-MAGICAL_circuits.Peak_point2(p))/2<2000);
+    if ~isempty(index2)
+    H3K4me3_peaks_flag(p)=1;
+    end
+end
+
+
+
+%validated eGDR GWAS
+
+[GWAS.chr, GWAS.point1, GWAS.point2, GWAS.SNP_ID, GWAS.gene]=textread('GWAS/GWAS_eGFR_hg38.txt', '%s %d %d %s %s');
+
+GWAS_SNP_ID=cell(height(MAGICAL_circuits),1);
+for g=1:424
+    index1=find(strcmp(MAGICAL_circuits.Peak_chr, GWAS.chr(g))>0);
+    index2=find(abs(GWAS.point1(g)+GWAS.point2(g)-MAGICAL_circuits.Peak_point1(index1)-MAGICAL_circuits.Peak_point2(index1))/2<1000);
+    if ~isempty(index2)
+        GWAS_SNP_ID(index1(index2))=GWAS.SNP_ID(g);
+    end
+end
+
+aa=~cellfun(@isempty,GWAS_SNP_ID);
+length(unique(GWAS_SNP_ID(aa>0)))
+
+
+GWAS_locus_ID=cell(height(MAGICAL_circuits),1);
+for g=425:length(GWAS.SNP_ID)
+    index1=find(strcmp(MAGICAL_circuits.Peak_chr, GWAS.chr(g))>0);
+    index2=find(GWAS.point1(g)<MAGICAL_circuits.Peak_point2(index1) & GWAS.point2(g)>MAGICAL_circuits.Peak_point1(index1));
+    if ~isempty(index2)
+        GWAS_locus_ID(index1(index2))=GWAS.SNP_ID(g);
+    end
+end
+aa=~cellfun(@isempty,GWAS_locus_ID);
+length(unique(GWAS_locus_ID(aa>0)))
+
+
+GWAS_genes_flag=zeros(height(MAGICAL_circuits),1);
+for g=1:length(GWAS.SNP_ID)
+    index1=find(strcmp(MAGICAL_circuits.Gene_symbol, GWAS.gene(g))>0);
+    GWAS_genes_flag(index1)=1;
+end
+length(unique(MAGICAL_circuits.Gene_symbol(GWAS_genes_flag>0)))
+
+
+%validated enhancer-gene looping
+GeneHancer_elements.chr='chr'+GeneHancer_elements.chr;
+
+Looping_flag=zeros(height(MAGICAL_circuits),2);
+for p=1:height(MAGICAL_circuits)
+    index1=find(strcmp(GeneHancer_elements.chr, MAGICAL_circuits.Peak_chr(p))>0);
+    index2=find(abs(GeneHancer_elements.element_start(index1)+GeneHancer_elements.element_end(index1)-MAGICAL_circuits.Peak_point1(p)-MAGICAL_circuits.Peak_point2(p))/2<500);
+    if ~isempty(index2)
+        Looping_flag(p,1)=1;
+        index3=find(ismember(GeneHancer_geneassociations.GHid, unique(GeneHancer_elements.GHid(index1(index2))))>0);
+        aa = intersect(GeneHancer_geneassociations.symbol(index3),MAGICAL_circuits.Gene_symbol(p));
+        if ~isempty(aa)
+            Looping_flag(p,2)=1;
+        end
+    end
+end
+sum(Looping_flag)
+
+
+CollecTRI_regulons=zeros(height(MAGICAL_circuits),1);
+for p=1:height(MAGICAL_circuits)
+    if (strcmp(MAGICAL_circuits.CollecTRI_regulons(p), 'Gene not included')==0 && ~isempty(MAGICAL_circuits.CollecTRI_regulons{p}))
+        CollecTRI_regulons(p)=1;
+    end
+end
+
+Clusters=unique(MAGICAL_circuits.Cluster_ID);
+
+Gene_num=zeros(length(Clusters), 1);
+for p=1:length(Clusters)
+    Gene_num(p)=length(unique(MAGICAL_circuits.Gene_symbol(strcmp(MAGICAL_circuits.Cluster_ID, Clusters(p))>0 & MAGICAL_circuits.RPTEC_flag>0)));
+end
+
+Gene_num=zeros(length(Clusters), 1);
+for p=1:length(Clusters)
+    Gene_num(p)=length(unique(MAGICAL_circuits.Gene_symbol(strcmp(MAGICAL_circuits.Cluster_ID, Clusters(p))>0 & MAGICAL_circuits.GeneHancer_looping_flag>0)));
+end
+
+Gene_num=zeros(length(Clusters), 1);
+for p=1:length(Clusters)
+    Gene_num(p)=length(unique(MAGICAL_circuits.Gene_symbol(strcmp(MAGICAL_circuits.Cluster_ID, Clusters(p))>0 & CollecTRI_regulons>0)));
+end
+
+
+
+% pathway analysis, simple check with Jens
+
+fid=fopen('V2_Kidney_aPT_PT_all_samples_trajectory_MAGICAL_pathways_top500.txt', 'w');
+for p=1:height(MAGICAL_circuits)
+    index1=find(contains(Pathways.Sample_name, MAGICAL_circuits.Cluster_ID(p))>0);
+    if ~isempty(index1)
+        index2=find(contains(Pathways.ReadWrite_overlap_symbols(index1),MAGICAL_circuits.Gene_symbol(p))>0);
+        if ~isempty(index2)
+            for i=1:length(index2)
+                fprintf(fid, '%s,', Pathways.Scp(index1(index2)));
+            end
+            fprintf(fid, '\n');
+        else
+            fprintf(fid, '\n');
+        end
+    else
+        fprintf(fid, '\n');
+    end
+end
+fclose(fid);
+
+
+
+
+
+
+
+%take out cluster P_15 and P_19
+index=find(MAGICAL_circuits.Gene_sc_Log2FC>0);
+MAGICAL_circuits=MAGICAL_circuits(index,:);
+
+index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_15')==0 & strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_19')==0);
+MAGICAL_circuits=MAGICAL_circuits(index,:);
+
+
+%lineage 1, up in 13, 4, 8, 10
+positive_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_13')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_4')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_8')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_10')>0 );
+
+negative_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_13')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_4')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_8')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_10')==0 );
+
+Lineage_positive_circuits=MAGICAL_circuits(positive_index,:);
+Lineage1_negative_circuits=MAGICAL_circuits(negative_index,:);
+Lineage_positive_circuits.lineage_specific_flag=~ismember(Lineage_positive_circuits.Gene_symbol,Lineage1_negative_circuits.Gene_symbol);
+
+length(unique(Lineage_positive_circuits.Gene_symbol(Lineage_positive_circuits.lineage_specific_flag>0)))
+
+writetable(Lineage_positive_circuits, 'aPT_lineage1.txt')
+
+
+%lineage 2, up in 14, 21, 18, 22
+positive_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_14')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_21')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_18')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_22')>0 );
+
+negative_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_14')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_21')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_18')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_22')==0 );
+
+Lineage_positive_circuits=MAGICAL_circuits(positive_index,:);
+Lineage_negative_circuits=MAGICAL_circuits(negative_index,:);
+Lineage_positive_circuits.lineage_specific_flag=~ismember(Lineage_positive_circuits.Gene_symbol,Lineage_negative_circuits.Gene_symbol);
+
+length(unique(Lineage_positive_circuits.Gene_symbol(Lineage_positive_circuits.lineage_specific_flag>0)))
+
+writetable(Lineage_positive_circuits, 'aPT_lineage2.txt')
+
+
+
+%lineage 3, up in 13, 16, 27
+positive_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_13')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_16')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_17')>0 );
+
+negative_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_13')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_16')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_17')==0 );
+
+Lineage_positive_circuits=MAGICAL_circuits(positive_index,:);
+Lineage_negative_circuits=MAGICAL_circuits(negative_index,:);
+Lineage_positive_circuits.lineage_specific_flag=~ismember(Lineage_positive_circuits.Gene_symbol,Lineage_negative_circuits.Gene_symbol);
+
+length(unique(Lineage_positive_circuits.Gene_symbol(Lineage_positive_circuits.lineage_specific_flag>0)))
+
+writetable(Lineage_positive_circuits, 'aPT_lineage3.txt')
+
+
+
+%lineage 4, up in 14, 21, 12
+positive_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_14')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_21')>0 |...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_12')>0 );
+
+negative_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_14')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_21')==0 &...
+    strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_12')==0 );
+
+Lineage_positive_circuits=MAGICAL_circuits(positive_index,:);
+Lineage_negative_circuits=MAGICAL_circuits(negative_index,:);
+Lineage_positive_circuits.lineage_specific_flag=~ismember(Lineage_positive_circuits.Gene_symbol,Lineage_negative_circuits.Gene_symbol);
+
+length(unique(Lineage_positive_circuits.Gene_symbol(Lineage_positive_circuits.lineage_specific_flag>0)))
+
+writetable(Lineage_positive_circuits, 'aPT_lineage4.txt')
+
+
+%lineage 5, up in 20
+positive_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_20')>0);
+
+negative_index=find(strcmp(string(MAGICAL_circuits.Cluster_ID), 'P_20')==0);
+
+Lineage_positive_circuits=MAGICAL_circuits(positive_index,:);
+Lineage_negative_circuits=MAGICAL_circuits(negative_index,:);
+Lineage_positive_circuits.lineage_specific_flag=~ismember(Lineage_positive_circuits.Gene_symbol,Lineage_negative_circuits.Gene_symbol);
+
+length(unique(Lineage_positive_circuits.Gene_symbol(Lineage_positive_circuits.lineage_specific_flag>0)))
+
+writetable(Lineage_positive_circuits, 'aPT_lineage5.txt')
+
+
+
